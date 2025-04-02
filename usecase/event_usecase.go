@@ -36,7 +36,6 @@ type EventUsecase interface {
 
 	GetEventOutsideByID(eventID uint) (*response.OutsideResponse, error)
 	CreateFile(eventID uint) ([]byte, string, error)
-	
 }
 
 type eventUsecase struct {
@@ -217,7 +216,7 @@ func (u *eventUsecase) CreateEvent(req *request.EventRequest, claims map[string]
 	for _, uid := range userIDs {
 		news := entity.News{
 			Title:   "กิจกรรมใหม่",
-			Userid:  uid,
+			UserID:  uid,
 			Message: fmt.Sprintf("กิจกรรม'%s' '%s' '%s'", event.EventName, utility.FormatToThaiDate(event.StartDate), utility.FormatToThaiTime(event.StartDate)),
 		}
 		if err := u.eventRepo.NewsForUser(&news); err != nil {
@@ -282,72 +281,25 @@ func (u *eventUsecase) ToggleEventStatus(eventID uint, claims map[string]interfa
 	return newStatus, nil
 }
 
-func (u *eventUsecase) DeleteEventByID(eventID uint, claims map[string]interface{}) error {
-	event, err := u.eventRepo.GetEventByID(eventID)
-	if err != nil {
-		return fmt.Errorf("event not found")
-	}
-
+func (u *eventUsecase) UpdateEventByID(eventID uint, claims map[string]interface{}, req request.EventRequest) error {
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return fmt.Errorf("invalid user_id in claims")
 	}
 	userID := uint(userIDFloat)
 
-	if event.Creator != userID {
-		return fmt.Errorf("you do not have permission to delete this event")
-	}
-
-	userIDs, err := u.eventRepo.GroupByEvent(eventID)
-	if err != nil {
-		return fmt.Errorf("failed to get users for event: %w", err)
-	}
-
-	for _, uid := range userIDs {
-		news := entity.News{
-			Title:   "กิจกรรมถูกลบ",
-			Userid:  uid,
-			Message: fmt.Sprintf("กิจกรรม'%s' ที่คุณเข้าร่วมถูกลบแล้ว.", event.EventName),
-		}
-		if err := u.eventRepo.NewsForUser(&news); err != nil {
-			return fmt.Errorf("failed to send news to user %d: %w", uid, err)
-		}
-	}
-
-	return u.eventRepo.DeleteEventByID(event.EventID)
+	return u.eventRepo.UpdateEventWithTransaction(eventID, userID, req)
 }
 
-func (u *eventUsecase) UpdateEventByID(eventID uint, claims map[string]interface{}, req request.EventRequest) error {
-	event, err := u.eventRepo.GetEventByID(eventID)
-	if err != nil {
-		return fmt.Errorf("event not found")
-	}
 
+func (u *eventUsecase) DeleteEventByID(eventID uint, claims map[string]interface{}) error {
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
 		return fmt.Errorf("invalid user_id in claims")
 	}
 	userID := uint(userIDFloat)
-	if event.Creator != userID {
-		return fmt.Errorf("you do not have permission to edit this event")
-	}
 
-	if event.FreeSpace == 0 {
-		event.Status = false
-	}
-
-	startDate, err := utility.ParseStartDate(req.StartDate)
-	if err != nil {
-		return fmt.Errorf("invalid start date format")
-	}
-
-	event.EventName = req.EventName
-	event.StartDate = startDate
-	event.WorkingHour = req.WorkingHour
-	event.Location = req.Location
-	event.Detail = req.Detail
-
-	return u.eventRepo.UpdateEventByID(event)
+	return u.eventRepo.DeleteEventWithTransaction(eventID, userID)
 }
 
 func (u *eventUsecase) MyEvent(claims map[string]interface{}) ([]response.EventResponse, error) {
@@ -619,7 +571,7 @@ func (u *eventUsecase) GetEventOutsideByID(eventID uint) (*response.OutsideRespo
 		EventID:     outside.EventID,
 		EventName:   outside.EventName,
 		Location:    outside.Location,
-		SchoolYear: outside.SchoolYear,
+		SchoolYear:  outside.SchoolYear,
 		StartDate:   outside.StartDate,
 		WorkingHour: outside.WorkingHour,
 		Intendant:   outside.Intendant,
@@ -630,24 +582,124 @@ func (u *eventUsecase) GetEventOutsideByID(eventID uint) (*response.OutsideRespo
 			LastName:    outside.Student.LastName,
 			Phone:       outside.Student.Phone,
 			Code:        outside.Student.Code,
-			BranchID: outside.Student.BranchId,
+			BranchID:    outside.Student.BranchId,
 			BranchName:  outside.Student.Branch.BranchName,
-			FacultyID: outside.Student.Branch.Faculty.FacultyID,
+			FacultyID:   outside.Student.Branch.Faculty.FacultyID,
 			FacultyName: outside.Student.Branch.Faculty.FacultyName,
 		},
 	}
 	return &outsideRes, nil
 }
 
-func (u *eventUsecase) CreateFile(eventID uint) ([]byte, string, error){
+func (u *eventUsecase) CreateFile(eventID uint) ([]byte, string, error) {
 	data, err := u.GetEventOutsideByID(eventID)
 	if err != nil {
 		return nil, "", fmt.Errorf("data not found: %v", err)
 	}
 	pdfBytes, fileName, err := filesystem.CreatePDF(*data)
 	if err != nil {
-		return nil, " " , fmt.Errorf("error creating PDF: %v", err)
+		return nil, " ", fmt.Errorf("error creating PDF: %v", err)
 	}
 	return pdfBytes, fileName, nil
-	
+
 }
+
+
+
+
+
+
+
+// func (u *eventUsecase) UpdateEventByID(eventID uint, claims map[string]interface{}, req request.EventRequest) error {
+// 	event, err := u.eventRepo.GetEventByID(eventID)
+// 	if err != nil {
+// 		return fmt.Errorf("event not found")
+// 	}
+
+// 	userIDFloat, ok := claims["user_id"].(float64)
+// 	if !ok {
+// 		return fmt.Errorf("invalid user_id in claims")
+// 	}
+// 	userID := uint(userIDFloat)
+// 	if event.Creator != userID {
+// 		return fmt.Errorf("you do not have permission to edit this event")
+// 	}
+
+// 	if event.FreeSpace == 0 {
+// 		event.Status = false
+// 	}
+
+// 	startDate, err := utility.ParseStartDate(req.StartDate)
+// 	if err != nil {
+// 		return fmt.Errorf("invalid start date format")
+// 	}
+
+// 	event.EventName = req.EventName
+// 	event.StartDate = startDate
+// 	event.WorkingHour = req.WorkingHour
+// 	event.Location = req.Location
+// 	event.Detail = req.Detail
+
+// 	userIDs, err := u.eventRepo.GroupByEvent(eventID)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get users for event: %w", err)
+// 	}
+// 	for _, uid := range userIDs {
+// 		news := entity.News{
+// 			Title:   "กิจกรรมมีการแก้ไขรายละเอียด",
+// 			UserID:  uid,
+// 			Message: fmt.Sprintf("กิจกรรม'%s' ที่คุณเข้าร่วมมีการแก้ไขรายละเอียด.", event.EventName),
+// 		}
+// 		if err := u.eventRepo.NewsForUser(&news); err != nil {
+// 			return fmt.Errorf("failed to send news to user %d: %w", uid, err)
+// 		}
+// 	}
+
+// 	return u.eventRepo.UpdateEventByID(event)
+// }
+
+
+// func (u *eventUsecase) DeleteEventByID(eventID uint, claims map[string]interface{}) error {
+// 	event, err := u.eventRepo.GetEventByID(eventID)
+// 	if err != nil {
+// 		return fmt.Errorf("event not found")
+// 	}
+
+// 	userIDFloat, ok := claims["user_id"].(float64)
+// 	if !ok {
+// 		return fmt.Errorf("invalid user_id in claims")
+// 	}
+// 	userID := uint(userIDFloat)
+
+// 	if event.Creator != userID {
+// 		return fmt.Errorf("you do not have permission to delete this event")
+// 	}
+
+// 	userIDs, err := u.eventRepo.GroupByEvent(eventID)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get users for event: %w", err)
+// 	}
+
+// 	for _, uid := range userIDs {
+// 		news := entity.News{
+// 			Title:   "กิจกรรมถูกลบ",
+// 			UserID:  uid,
+// 			Message: fmt.Sprintf("กิจกรรม'%s' ที่คุณเข้าร่วมถูกลบแล้ว.", event.EventName),
+// 		}
+// 		if err := u.eventRepo.NewsForUser(&news); err != nil {
+// 			return fmt.Errorf("failed to send news to user %d: %w", uid, err)
+// 		}
+// 	}
+
+// 	return u.eventRepo.DeleteEventByID(event.EventID)
+// }
+
+// func (u *eventUsecase) CreateEvent(req *request.EventRequest, claims map[string]interface{}) error {
+// 	userIDFloat, ok := claims["user_id"].(float64)
+// 	if !ok {
+// 		return fmt.Errorf("invalid user_id in claims")
+// 	}
+// 	userID := uint(userIDFloat)
+
+// 	return u.eventRepo.CreateEventWithTransaction(req, userID)
+// }

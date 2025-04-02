@@ -60,13 +60,15 @@ type Done struct {
 }
 
 type News struct {
-	NewsID    uint      `gorm:"primaryKey;autoIncrement" json:"news_id"`
-	Title     string    `json:"title"`
-	Userid    uint      `json:"user_id"`
-	User      User      `gorm:"foreignKey:Userid;references:UserID" json:"student"`
-	Message   string    `json:"message"`
-	CreatedAt time.Time `json:"created_at"`
+    NewsID    uint      `gorm:"primaryKey;autoIncrement" json:"news_id"`
+    Title     string    `json:"title"`
+    UserID    uint      `json:"user_id"`
+    User      User      `gorm:"foreignKey:UserID;references:UserID" json:"user"`
+    Message   string    `json:"message"`
+    IsRead    bool      `gorm:"default:false" json:"is_read"`
+    CreatedAt time.Time `json:"created_at"`
 }
+
 
 type Permission struct {
 	BranchIDs      string `json:"branches"`

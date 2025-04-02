@@ -62,8 +62,15 @@ func FormatToThaiTime(t time.Time) string {
 
     t = t.In(location)
 
-    thaiTimeFormat := "15:04:05"
+    thaiTimeFormat := "15:04"
 
+    return t.Format(thaiTimeFormat)
+}
+
+func AddHoursToTime(t time.Time, hoursToAdd uint) string {
+	t = t.Add(time.Duration(hoursToAdd) * time.Hour)
+	// t.Add(time.Duration(hoursToAdd) * time.Hour)
+	thaiTimeFormat := "15:04"
     return t.Format(thaiTimeFormat)
 }
 

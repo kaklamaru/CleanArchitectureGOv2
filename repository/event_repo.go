@@ -3,7 +3,9 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"go-clean-arch/pkg/utility"
 	"go-clean-arch/structure/entity"
+	"go-clean-arch/structure/request"
 	"os"
 	"time"
 
@@ -20,6 +22,9 @@ type EventRepository interface {
 	ToggleEventStatus(eventID uint) (bool, error)
 	UpdateEventByID(event *entity.Event) error
 	DeleteEventByID(eventID uint) error
+	// CreateEventWithTransaction(req *request.EventRequest, userID uint) error 
+	UpdateEventWithTransaction(eventID, userID uint, req request.EventRequest) error 
+	DeleteEventWithTransaction(eventID, userID uint) error
 
 	GroupByEvent(eventID uint) ([]uint, error)
 	JoinEvent(eventInside *entity.EventInside) error
@@ -32,6 +37,7 @@ type EventRepository interface {
 	MyChecklist(userID uint, eventID uint) ([]entity.EventInside, error) 
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
 	
+	
 	CreateEventOutside(outside entity.EventOutside) error
 	DeleteEventOutsideByID(eventID uint) error
 	GetEventOutsideByID(id uint) (*entity.EventOutside,error)
@@ -39,10 +45,74 @@ type EventRepository interface {
 
 type eventRepository struct {
 	db *gorm.DB
+	
 }
 
 func NewEventRepository(db *gorm.DB) EventRepository {
 	return &eventRepository{db: db}
+}
+
+func (r *eventRepository) UpdateEventWithTransaction(eventID, userID uint, req request.EventRequest) error {
+	// เริ่ม Transaction
+	tx := r.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// ดึงข้อมูลกิจกรรม
+	var event entity.Event
+	if err := tx.Where("event_id = ?", eventID).First(&event).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("event not found: %w", err)
+	}
+
+	// ตรวจสอบสิทธิ์การแก้ไข
+	if event.Creator != userID {
+		tx.Rollback()
+		return fmt.Errorf("you do not have permission to edit this event")
+	}
+
+	// อัปเดตข้อมูล
+	startDate, err := utility.ParseStartDate(req.StartDate)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("invalid start date format")
+	}
+
+	event.EventName = req.EventName
+	event.StartDate = startDate
+	event.WorkingHour = req.WorkingHour
+	event.Location = req.Location
+	event.Detail = req.Detail
+
+	if err := tx.Save(&event).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to update event: %w", err)
+	}
+
+	// แจ้งเตือนผู้ใช้ที่เข้าร่วม
+	var userIDs []uint
+	if err := tx.Model(&entity.EventInside{}).Where("event_id = ?", eventID).Pluck("user", &userIDs).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to get users for event: %w", err)
+	}
+
+	for _, uid := range userIDs {
+		news := entity.News{
+			Title:   "กิจกรรมมีการแก้ไขรายละเอียด",
+			UserID:  uid,
+			Message: fmt.Sprintf("กิจกรรม '%s' ที่คุณเข้าร่วมมีการแก้ไขรายละเอียด.", event.EventName),
+		}
+		if err := tx.Create(&news).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to send news to user %d: %w", uid, err)
+		}
+	}
+
+	// Commit Transaction
+	return tx.Commit().Error
 }
 
 func (r *eventRepository) CreateEvent(event *entity.Event) error {
@@ -100,22 +170,58 @@ func (r *eventRepository) ToggleEventStatus(eventID uint) (bool, error) {
 	return updatedEvent.Status, nil
 }
 
-func (r *eventRepository) DeleteEventByID(eventID uint) error {
+
+func (r *eventRepository) DeleteEventWithTransaction(eventID, userID uint) error {
+	tx := r.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 	var event entity.Event
-	if err := r.db.Select("status").Where("event_id = ?", eventID).First(&event).Error; err != nil {
+	if err := tx.Where("event_id = ?", eventID).First(&event).Error; err != nil {
 		return fmt.Errorf("event not found: %w", err)
 	}
-
 	if event.Status {
 		return fmt.Errorf("cannot delete event because status is true")
 	}
 
-	if err := r.db.Where("event_id = ?", eventID).Delete(&entity.Event{}).Error; err != nil {
+	// ตรวจสอบสิทธิ์การลบ
+	if event.Creator != userID {
+		tx.Rollback()
+		return fmt.Errorf("you do not have permission to delete this event")
+	}
+
+	// ดึงรายชื่อผู้ใช้ที่เกี่ยวข้อง
+	var userIDs []uint
+	if err := tx.Model(&entity.EventInside{}).Where("event_id = ?", eventID).Pluck("user", &userIDs).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to get users for event: %w", err)
+	}
+
+	// ลบกิจกรรม
+	if err := tx.Where("event_id = ?", eventID).Delete(&entity.Event{}).Error; err != nil {
+		tx.Rollback()
 		return fmt.Errorf("failed to delete event: %w", err)
 	}
 
-	return nil
+	// สร้างข่าวสารแจ้งผู้ใช้
+	for _, uid := range userIDs {
+		news := entity.News{
+			Title:   "กิจกรรมถูกลบ",
+			UserID:  uid,
+			Message: fmt.Sprintf("กิจกรรม '%s' ที่คุณเข้าร่วมถูกลบแล้ว.", event.EventName),
+		}
+		if err := tx.Create(&news).Error; err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to send news to user %d: %w", uid, err)
+		}
+	}
+
+	// Commit Transaction
+	return tx.Commit().Error
 }
+
 
 func (r *eventRepository) GroupByEvent(eventID uint) ([]uint, error) {
 	var eventInsides []entity.EventInside
@@ -130,21 +236,6 @@ func (r *eventRepository) GroupByEvent(eventID uint) ([]uint, error) {
 	return userIDs, nil
 }
 
-func (r *eventRepository) UpdateEventByID(event *entity.Event) error {
-	if err := r.db.Model(&entity.Event{}).
-		Where("event_id = ?", event.EventID).
-		Updates(entity.Event{
-			EventName:   event.EventName,
-			Detail:      event.Detail,
-			Location:    event.Location,
-			StartDate:   event.StartDate,
-			WorkingHour: event.WorkingHour,
-			Status:      event.Status,
-		}).Error; err != nil {
-		return fmt.Errorf("failed to update event: %w", err)
-	}
-	return nil
-}
 
 func (r *eventRepository) MyEvent(userID uint) ([]entity.Event,error){
 	var events []entity.Event
@@ -380,3 +471,45 @@ func (r *eventRepository) GetEventOutsideByID(id uint) (*entity.EventOutside,err
 }
 
 
+
+
+
+
+
+
+
+
+
+
+func (r *eventRepository) UpdateEventByID(event *entity.Event) error {
+	if err := r.db.Model(&entity.Event{}).
+		Where("event_id = ?", event.EventID).
+		Updates(entity.Event{
+			EventName:   event.EventName,
+			Detail:      event.Detail,
+			Location:    event.Location,
+			StartDate:   event.StartDate,
+			WorkingHour: event.WorkingHour,
+			Status:      event.Status,
+		}).Error; err != nil {
+		return fmt.Errorf("failed to update event: %w", err)
+	}
+	return nil
+}
+
+func (r *eventRepository) DeleteEventByID(eventID uint) error {
+	var event entity.Event
+	if err := r.db.Select("status").Where("event_id = ?", eventID).First(&event).Error; err != nil {
+		return fmt.Errorf("event not found: %w", err)
+	}
+
+	if event.Status {
+		return fmt.Errorf("cannot delete event because status is true")
+	}
+
+	if err := r.db.Where("event_id = ?", eventID).Delete(&entity.Event{}).Error; err != nil {
+		return fmt.Errorf("failed to delete event: %w", err)
+	}
+
+	return nil
+}

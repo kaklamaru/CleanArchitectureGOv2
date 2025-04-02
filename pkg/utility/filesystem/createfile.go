@@ -4,9 +4,11 @@ import (
 	// "RESTAPI/usecase"
 	"bytes"
 	"fmt"
+	"go-clean-arch/pkg/utility"
 	"go-clean-arch/structure/response"
 	"log"
 	"os"
+
 	// "time"
 
 	"github.com/signintech/gopdf"
@@ -92,7 +94,7 @@ func header(pdf *gopdf.GoPdf,data response.OutsideResponse){
     
 	pdf.SetFont("THSarabunNewBold", "", 16)
 	pdf.SetXY(510, 49)
-	pdf.Cell(nil, string(data.SchoolYear))
+	pdf.Cell(nil,  fmt.Sprint(data.SchoolYear))
 
 	pdf.SetXY(196, 82)
 	pdf.Cell(nil, data.Student.TitleName+data.Student.FirstName+" "+data.Student.LastName)
@@ -126,6 +128,9 @@ func header(pdf *gopdf.GoPdf,data response.OutsideResponse){
 
 
 func table(pdf *gopdf.GoPdf,data response.OutsideResponse) {
+	date := utility.FormatToThaiDate(data.StartDate)
+	time := utility.FormatToThaiTime(data.StartDate)
+	endtime := utility.AddHoursToTime(data.StartDate,data.WorkingHour)
 	tableStartY := 180.0
 	marginLeft := 51.0
 	table := pdf.NewTableLayout(marginLeft, tableStartY, 30, 1)
@@ -137,7 +142,7 @@ func table(pdf *gopdf.GoPdf,data response.OutsideResponse) {
 	table.AddColumn("สถานที่", 150, "center")
 	table.AddColumn("เวลามา-เวลากลับ", 150, "center")
 	table.AddColumn("จำนวนชั่งโมง", 80, "center")
-	table.AddRow([]string{data.EventName, "" ,data.Location, "10:00-16:00", fmt.Sprint(data.WorkingHour)})
+	table.AddRow([]string{data.EventName, date ,data.Location, time+"-"+endtime , fmt.Sprint(data.WorkingHour)})
 	table.DrawTable()
 
     pdf.SetFont("THSarabunNewBold", "", 18)
