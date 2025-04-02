@@ -20,10 +20,10 @@ type EventRepository interface {
 	CountEventInside(eventID uint) (uint, error)
 	GetEventByID(id uint) (*entity.Event, error)
 	ToggleEventStatus(eventID uint) (bool, error)
-	UpdateEventByID(event *entity.Event) error
-	DeleteEventByID(eventID uint) error
-	// CreateEventWithTransaction(req *request.EventRequest, userID uint) error 
-	UpdateEventWithTransaction(eventID, userID uint, req request.EventRequest) error 
+	// UpdateEventByID(event *entity.Event) error
+	// DeleteEventByID(eventID uint) error
+	// CreateEventWithTransaction(req *request.EventRequest, userID uint) error
+	UpdateEventWithTransaction(eventID, userID uint, req request.EventRequest) error
 	DeleteEventWithTransaction(eventID, userID uint) error
 
 	GroupByEvent(eventID uint) ([]uint, error)
@@ -31,25 +31,21 @@ type EventRepository interface {
 	UnJoinEvent(eventID uint, userID uint) error
 	GetFilePath(eventID uint, userID uint) (string, error)
 	UploadFile(eventID uint, userID uint, filePath string) error
-	MyEvent(userID uint) ([]entity.Event,error)
+	MyEvent(userID uint) ([]entity.Event, error)
 	AllAllowedEvent() ([]entity.Event, error)
 	AllCurrentEvent() ([]entity.Event, error)
-	MyChecklist(userID uint, eventID uint) ([]entity.EventInside, error) 
+	MyChecklist(userID uint, eventID uint) ([]entity.EventInside, error)
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
 	AllEventInsideThisYear(userID uint, year uint) ([]entity.EventInside, error)
-	
-	
+
 	CreateEventOutside(outside entity.EventOutside) error
 	DeleteEventOutsideByID(eventID uint) error
-	GetEventOutsideByID(id uint) (*entity.EventOutside,error)
+	GetEventOutsideByID(id uint) (*entity.EventOutside, error)
 	AllEventOutsideThisYear(userID uint, year uint) ([]entity.EventOutside, error)
-
-	
 }
 
 type eventRepository struct {
 	db *gorm.DB
-	
 }
 
 func NewEventRepository(db *gorm.DB) EventRepository {
@@ -174,7 +170,6 @@ func (r *eventRepository) ToggleEventStatus(eventID uint) (bool, error) {
 	return updatedEvent.Status, nil
 }
 
-
 func (r *eventRepository) DeleteEventWithTransaction(eventID, userID uint) error {
 	tx := r.db.Begin()
 	defer func() {
@@ -226,7 +221,6 @@ func (r *eventRepository) DeleteEventWithTransaction(eventID, userID uint) error
 	return tx.Commit().Error
 }
 
-
 func (r *eventRepository) GroupByEvent(eventID uint) ([]uint, error) {
 	var eventInsides []entity.EventInside
 	err := r.db.Where("event_id = ?", eventID).Find(&eventInsides).Error
@@ -240,10 +234,9 @@ func (r *eventRepository) GroupByEvent(eventID uint) ([]uint, error) {
 	return userIDs, nil
 }
 
-
-func (r *eventRepository) MyEvent(userID uint) ([]entity.Event,error){
+func (r *eventRepository) MyEvent(userID uint) ([]entity.Event, error) {
 	var events []entity.Event
-	if err := r.db.Preload("Teacher").Where("creator = ?",userID).Find(&events).Error; err != nil {
+	if err := r.db.Preload("Teacher").Where("creator = ?", userID).Find(&events).Error; err != nil {
 		return nil, err
 	}
 	return events, nil
@@ -377,22 +370,20 @@ func (r *eventRepository) UnJoinEvent(eventID uint, userID uint) error {
 }
 
 func (r *eventRepository) GetFilePath(eventID uint, userID uint) (string, error) {
-    var filePath string
+	var filePath string
 
-    // ดึงค่า file_pdf ทันที ไม่ต้องเช็ก Count
-    err := r.db.Model(&entity.EventInside{}).
-        Where("event_id = ? AND user = ?", eventID, userID).
-        Pluck("file", &filePath).Error
-    if err != nil {
-        return "", fmt.Errorf("failed to retrieve file path: %w", err)
-    }
+	err := r.db.Model(&entity.EventInside{}).
+		Where("event_id = ? AND user = ?", eventID, userID).
+		Pluck("file", &filePath).Error
+	if err != nil {
+		return "", fmt.Errorf("failed to retrieve file path: %w", err)
+	}
 
-    // ถ้าไม่มีค่า ให้ return error
-    if filePath == "" {
-        return "", fmt.Errorf("no file found for the specified event and user")
-    }
+	if filePath == "" {
+		return "", nil
+	}
 
-    return filePath, nil
+	return filePath, nil
 }
 
 func (r *eventRepository) UploadFile(eventID uint, userID uint, filePath string) error {
@@ -439,7 +430,7 @@ func (r *eventRepository) AllEventInsideThisYear(userID uint, year uint) ([]enti
 }
 
 // outside event
-func (r *eventRepository) CreateEventOutside(outside entity.EventOutside) error{
+func (r *eventRepository) CreateEventOutside(outside entity.EventOutside) error {
 	if err := r.db.Create(&outside).Error; err != nil {
 		return err
 	}
@@ -453,13 +444,13 @@ func (r *eventRepository) DeleteEventOutsideByID(eventID uint) error {
 
 	// ดึงข้อมูล event
 	if err := tx.Where("event_id = ?", eventID).First(&event).Error; err != nil {
-		tx.Rollback() 
+		tx.Rollback()
 		return fmt.Errorf("event not found: %w", err)
 	}
 
 	if event.File != "" {
 		if err := os.Remove(event.File); err != nil && !os.IsNotExist(err) {
-			tx.Rollback() 
+			tx.Rollback()
 			return fmt.Errorf("failed to remove file: %w", err)
 		}
 	}
@@ -474,8 +465,7 @@ func (r *eventRepository) DeleteEventOutsideByID(eventID uint) error {
 	return tx.Commit().Error
 }
 
-
-func (r *eventRepository) GetEventOutsideByID(id uint) (*entity.EventOutside,error){
+func (r *eventRepository) GetEventOutsideByID(id uint) (*entity.EventOutside, error) {
 	var outside entity.EventOutside
 	if err := r.db.Preload("Student.Branch.Faculty").First(&outside, "event_id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -497,13 +487,8 @@ func (r *eventRepository) AllEventOutsideThisYear(userID uint, year uint) ([]ent
 
 
 
-
-
-
-
-
-
-
+// ไม่ได้ใช้
+/*
 func (r *eventRepository) UpdateEventByID(event *entity.Event) error {
 	if err := r.db.Model(&entity.Event{}).
 		Where("event_id = ?", event.EventID).
@@ -536,4 +521,6 @@ func (r *eventRepository) DeleteEventByID(eventID uint) error {
 
 	return nil
 }
-// 
+
+*/
+
