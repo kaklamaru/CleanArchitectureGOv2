@@ -26,6 +26,7 @@ type EventUsecase interface {
 	MyEvent(claims map[string]interface{}) ([]response.EventResponse, error)
 	AllAllowedEvent() ([]response.EventResponse, error)
 	AllCurrentEvent() ([]response.EventResponse, error)
+	MyEventThisYear(claims map[string]interface{},year uint) ([]response.MyInside,[]response.MyOutside,error)
 
 	JoinEvent(eventID uint, claims map[string]interface{}) error
 	UnJoinEvent(eventID uint, claims map[string]interface{}) error
@@ -366,6 +367,55 @@ func (u *eventUsecase) AllCurrentEvent() ([]response.EventResponse, error) {
 		res = append(res, *mappedEvent)
 	}
 	return res, nil
+}
+
+func (u *eventUsecase) MyEventThisYear(claims map[string]interface{},year uint) ([]response.MyInside,[]response.MyOutside,error){
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return nil,nil, fmt.Errorf("invalid user_id in claims")
+	}
+	userID := uint(userIDFloat)
+	
+	inside,err:= u.eventRepo.AllEventInsideThisYear(userID,year)
+	if err != nil {
+		return nil,nil,err
+	}
+	var insideEvents []response.MyInside
+	for _, event := range inside {
+		mappedEvent := response.MyInside{
+			EventID: event.EventId,
+			EventName: event.Event.EventName,
+			Location: event.Event.Location,
+			StartDate: utility.FormatToThaiDate(event.Event.StartDate),
+			StartTime: utility.FormatToThaiTime(event.Event.StartDate),
+			WorkingHour: event.Event.WorkingHour,
+			SchoolYear: event.Event.SchoolYear,
+			Status:event.Status,
+			Comment: event.Comment,
+			File: event.File,
+		}
+		insideEvents = append(insideEvents, mappedEvent)
+	}
+	outside,err:=u.eventRepo.AllEventOutsideThisYear(userID,year)
+	if err != nil {
+		return nil,nil, err
+	}
+	var outsideEvents []response.MyOutside
+	for _, event := range outside {
+		mappedEvent := response.MyOutside{
+			EventID: event.EventID,
+			EventName: event.EventName,
+			Location: event.Location,
+			StartDate: utility.FormatToThaiDate(event.StartDate),
+			StartTime: utility.FormatToThaiTime(event.StartDate),
+			WorkingHour: event.WorkingHour,
+			SchoolYear: event.SchoolYear,
+			Intendant: event.Intendant,
+			File: event.File,
+		}
+		outsideEvents = append(outsideEvents, mappedEvent)
+	}
+	return insideEvents,outsideEvents,nil
 }
 
 // Inside

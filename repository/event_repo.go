@@ -36,11 +36,15 @@ type EventRepository interface {
 	AllCurrentEvent() ([]entity.Event, error)
 	MyChecklist(userID uint, eventID uint) ([]entity.EventInside, error) 
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
+	AllEventInsideThisYear(userID uint, year uint) ([]entity.EventInside, error)
 	
 	
 	CreateEventOutside(outside entity.EventOutside) error
 	DeleteEventOutsideByID(eventID uint) error
 	GetEventOutsideByID(id uint) (*entity.EventOutside,error)
+	AllEventOutsideThisYear(userID uint, year uint) ([]entity.EventOutside, error)
+
+	
 }
 
 type eventRepository struct {
@@ -421,6 +425,18 @@ func (r *eventRepository) UpdateEventStatusAndComment(eventID uint, userID uint,
 	return nil
 }
 
+func (r *eventRepository) AllEventInsideThisYear(userID uint, year uint) ([]entity.EventInside, error) {
+	var eventInsides []entity.EventInside
+	// year := 2568
+	err := r.db.Preload("Event").Joins("JOIN events ON events.event_id = event_insides.event_id").
+		Where("event_insides.user = ?", userID).
+		Where("events.school_year = ?", year).
+		Find(&eventInsides).Error
+	if err != nil {
+		fmt.Println("Error fetching data:", err)
+	}
+	return eventInsides, nil
+}
 
 // outside event
 func (r *eventRepository) CreateEventOutside(outside entity.EventOutside) error{
@@ -470,6 +486,13 @@ func (r *eventRepository) GetEventOutsideByID(id uint) (*entity.EventOutside,err
 	return &outside, nil
 }
 
+func (r *eventRepository) AllEventOutsideThisYear(userID uint, year uint) ([]entity.EventOutside, error) {
+	var eventOutside []entity.EventOutside
+	if err := r.db.Where("user = ? AND school_year = ?", userID, year).Find(&eventOutside).Error; err != nil {
+		return nil, err
+	}
+	return eventOutside, nil
+}
 
 
 
@@ -513,3 +536,4 @@ func (r *eventRepository) DeleteEventByID(eventID uint) error {
 
 	return nil
 }
+// 

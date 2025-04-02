@@ -204,6 +204,32 @@ func (c *EventController) AllCurrentEvent(ctx *fiber.Ctx) error {
 	}
 	return ctx.Status(fiber.StatusOK).JSON(events)
 }
+func (c *EventController) MyEventThisYear(ctx *fiber.Ctx) error {
+	yearStr := ctx.Params("year")
+	yearInt, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid year",
+		})
+	}
+	year := uint(yearInt)
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	insideEvents, outsideEvents, err := c.eventUsecase.MyEventThisYear(claims, year)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"inside_events":  insideEvents,
+		"outside_events": outsideEvents,
+	})
+}
 
 
 // Inside

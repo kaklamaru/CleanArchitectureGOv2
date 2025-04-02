@@ -75,3 +75,28 @@ type OutsideResponse struct {
 	Intendant   string          `json:"intendent"`
 	Student     StudentResponse `json:"student"`
 }
+
+type MyOutside struct {
+	EventID     uint   `json:"event_id"`
+	EventName   string `json:"event_name"`
+	Location    string `json:"location"`
+	StartDate   string `json:"start_date"`
+	StartTime   string `json:"start_time"`
+	WorkingHour uint   `json:"working_hour"`
+	SchoolYear  uint   `json:"school_year"`
+	Intendant   string `json:"intendent"`
+	File   string  `json:"file"`
+}
+
+type MyInside struct {
+	EventID     uint   `json:"event_id"`
+	EventName   string `json:"event_name"`
+	Location    string `json:"location"`
+	StartDate   string `json:"start_date"`
+	StartTime   string `json:"start_time"`
+	WorkingHour uint   `json:"working_hour"`
+	SchoolYear  uint   `json:"school_year"`
+	Status      bool   `json:"status"`
+	Comment     string `json:"comment"`
+	File   string  `json:"file"`
+}

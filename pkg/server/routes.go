@@ -83,6 +83,7 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	teacher.Put("/status/:id",eventContro.ToggleEventStatus)
 	teacher.Delete("/event/:id",eventContro.DeleteEventByID)
 	teacher.Put("/event/:id",eventContro.UpdateEventByID)
+	student.Get("myevents/:year",eventContro.MyEventThisYear)
 
 	// inside
 	student.Post("/joinevent/:id",eventContro.JoinEvent)
@@ -93,6 +94,7 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	teacher.Put("/check/:eventid/:userid", eventContro.UpdateEventStatusAndComment)
 
 	// outside
+
 	student.Get("/download/:id",eventContro.CreateFile)
 
 }
