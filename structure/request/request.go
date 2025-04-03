@@ -34,3 +34,12 @@ type EventRequest struct {
 	Branches    []uint `json:"branches"`
 	Years       []uint `json:"years"`
 }
+
+type OutsideRequest struct {
+	EventName   string `json:"event_name"`
+	Location    string `json:"location"`
+	StartDate   string `json:"start_date"`
+	SchoolYear  uint   `json:"school_year"`
+	WorkingHour uint   `json:"working_hour"`
+	Intendant   string `json:"intendent"`
+}

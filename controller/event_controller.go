@@ -419,6 +419,51 @@ func (c *EventController) UpdateEventStatusAndComment(ctx *fiber.Ctx) error {
 
 
 // Outside
+func (c *EventController) CreateEventOutside(ctx *fiber.Ctx) error{
+	var req request.OutsideRequest
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request payload",
+		})
+	}
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "failed to retrieve claims",
+		})
+	}
+	if err := c.eventUsecase.CreateEventOutside(req, claims); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Create eventOutside successfully",
+	})
+
+}
+
+func (c *EventController) DeleteEventOutsideByID(ctx *fiber.Ctx) error{
+	idStr := ctx.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid id format",
+		})
+	}
+	eventID := uint(id)
+	if err := c.eventUsecase.DeleteEventOutsideByID(eventID); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Delete eventOutside successfully",
+	})
+
+}
+
 func (c *EventController) CreateFile(ctx *fiber.Ctx) error{
 	idStr := ctx.Params("id")
 	id, err := strconv.Atoi(idStr)
@@ -439,4 +484,68 @@ func (c *EventController) CreateFile(ctx *fiber.Ctx) error{
 	ctx.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
 
 	return ctx.Send(data)
+}
+
+func (c *EventController) UploadFileOutside(ctx *fiber.Ctx) error {
+	idStr := ctx.Params("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid id format",
+		})
+	}
+	eventID := uint(id)
+
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "failed to retrieve claims",
+		})
+	}
+
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "failed to get file",
+		})
+	}
+
+	if err := c.eventUsecase.UploadFileOutside(eventID, claims,file); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "file uploaded successfully",
+	})
+}
+
+func (c *EventController) GetFileOutside(ctx *fiber.Ctx) error {
+	idStr := ctx.Params("eventid")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid id format",
+		})
+	}
+	eventID := uint(id)
+
+	idStr = ctx.Params("userid")
+	idInt, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid id format",
+		})
+	}
+	userID := uint(idInt)
+
+	filePath, err := c.eventUsecase.GetFileOutside(eventID, userID)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return ctx.SendFile(filePath, false)
+
 }

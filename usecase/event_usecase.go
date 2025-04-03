@@ -35,8 +35,13 @@ type EventUsecase interface {
 	MyChecklist(eventID uint, claims map[string]interface{}) ([]response.MyChecklist, error)
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
 
+	CreateEventOutside(req request.OutsideRequest,claims map[string]interface{}) error
+	DeleteEventOutsideByID(eventID uint) error
 	GetEventOutsideByID(eventID uint) (*response.OutsideResponse, error)
 	CreateFile(eventID uint) ([]byte, string, error)
+	GetFileOutside(eventID uint ,userID uint)(string,error)
+	UploadFileOutside(eventID uint, claims map[string]interface{}, file *multipart.FileHeader) error 
+
 }
 
 type eventUsecase struct {
@@ -418,6 +423,11 @@ func (u *eventUsecase) MyEventThisYear(claims map[string]interface{},year uint) 
 	return insideEvents,outsideEvents,nil
 }
 
+// func (u *eventUsecase) SendEvent(userID uint) error{
+
+
+// }
+
 // Inside
 func checkPermission(permission *response.EventResponse, user *entity.Student) bool {
 	if permission == nil || user == nil {
@@ -610,49 +620,6 @@ func (u *eventUsecase) UpdateEventStatusAndComment(eventID uint, userID uint, st
 	return u.eventRepo.UpdateEventStatusAndComment(eventID, userID, status, comment)
 }
 
-// Outside
-
-func (u *eventUsecase) GetEventOutsideByID(eventID uint) (*response.OutsideResponse, error) {
-	outside, err := u.eventRepo.GetEventOutsideByID(eventID)
-	if err != nil {
-		return nil, err
-	}
-	outsideRes := response.OutsideResponse{
-		EventID:     outside.EventID,
-		EventName:   outside.EventName,
-		Location:    outside.Location,
-		SchoolYear:  outside.SchoolYear,
-		StartDate:   outside.StartDate,
-		WorkingHour: outside.WorkingHour,
-		Intendant:   outside.Intendant,
-		Student: response.StudentResponse{
-			UserID:      outside.Student.UserID,
-			TitleName:   outside.Student.TitleName,
-			FirstName:   outside.Student.FirstName,
-			LastName:    outside.Student.LastName,
-			Phone:       outside.Student.Phone,
-			Code:        outside.Student.Code,
-			BranchID:    outside.Student.BranchId,
-			BranchName:  outside.Student.Branch.BranchName,
-			FacultyID:   outside.Student.Branch.Faculty.FacultyID,
-			FacultyName: outside.Student.Branch.Faculty.FacultyName,
-		},
-	}
-	return &outsideRes, nil
-}
-
-func (u *eventUsecase) CreateFile(eventID uint) ([]byte, string, error) {
-	data, err := u.GetEventOutsideByID(eventID)
-	if err != nil {
-		return nil, "", fmt.Errorf("data not found: %v", err)
-	}
-	pdfBytes, fileName, err := filesystem.CreatePDF(*data)
-	if err != nil {
-		return nil, " ", fmt.Errorf("error creating PDF: %v", err)
-	}
-	return pdfBytes, fileName, nil
-
-}
 
 
 

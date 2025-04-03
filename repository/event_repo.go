@@ -41,7 +41,11 @@ type EventRepository interface {
 	CreateEventOutside(outside entity.EventOutside) error
 	DeleteEventOutsideByID(eventID uint) error
 	GetEventOutsideByID(id uint) (*entity.EventOutside, error)
+	GetFilePathOutside(eventID uint, userID uint) (string, error)
+	UploadFileOutside(eventID uint, userID uint, filePath string) error
 	AllEventOutsideThisYear(userID uint, year uint) ([]entity.EventOutside, error)
+	EventOutsideExists(eventID uint, userID uint) (bool, error) 
+
 }
 
 type eventRepository struct {
@@ -484,6 +488,41 @@ func (r *eventRepository) AllEventOutsideThisYear(userID uint, year uint) ([]ent
 	return eventOutside, nil
 }
 
+func (r *eventRepository) GetFilePathOutside(eventID uint, userID uint) (string, error) {
+	var filePath string
+
+	err := r.db.Model(&entity.EventOutside{}).
+		Where("event_id = ? AND user = ?", eventID, userID).
+		Pluck("file", &filePath).Error
+	if err != nil {
+		return "", fmt.Errorf("failed to retrieve file path: %w", err)
+	}
+
+	if filePath == "" {
+		return "", nil
+	}
+
+	return filePath, nil
+}
+
+func (r *eventRepository) UploadFileOutside(eventID uint, userID uint, filePath string) error {
+	if err := r.db.Model(&entity.EventOutside{}).
+		Where("event_id = ? AND user = ?", eventID, userID).
+		Update("file", filePath).Error; err != nil {
+		return err
+	}
+	return nil
+}
+func (r *eventRepository) EventOutsideExists(eventID uint, userID uint) (bool, error) {
+	var count int64
+	err := r.db.Model(&entity.EventOutside{}).
+		Where("event_id = ? AND user = ?", eventID, userID).
+		Count(&count).Error
+	if err != nil {
+		return false, fmt.Errorf("failed to check event outside existence: %w", err)
+	}
+	return count > 0, nil
+}
 
 
 
