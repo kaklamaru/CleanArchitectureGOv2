@@ -223,16 +223,18 @@ func (c *EventController) MyEventThisYear(ctx *fiber.Ctx) error {
 	}
 	userID := uint(userIDFloat)
 
-	insideEvents, outsideEvents, err := c.eventUsecase.MyEventThisYear(userID, year)
+	insideEvents, outsideEvents,dones, err := c.eventUsecase.MyEventThisYear(userID, year)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
+	
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"inside_events":  insideEvents,
 		"outside_events": outsideEvents,
+		"dones":dones,
 	})
 }
 
@@ -254,7 +256,7 @@ func (c *EventController) AllSendEventThisYear(ctx *fiber.Ctx) error {
 	}
 	userID := uint(userInt)
 
-	insideEvents, outsideEvents, err := c.eventUsecase.MyEventThisYear(userID, year)
+	insideEvents, outsideEvents, err := c.eventUsecase.SendEventThisYear(userID, year)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

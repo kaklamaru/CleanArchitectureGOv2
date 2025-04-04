@@ -26,7 +26,8 @@ type EventUsecase interface {
 	MyEvent(claims map[string]interface{}) ([]response.EventResponse, error)
 	AllAllowedEvent() ([]response.EventResponse, error)
 	AllCurrentEvent() ([]response.EventResponse, error)
-	MyEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,error)
+	MyEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,*response.DoneResponse,error)
+	SendEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,error)
 
 	JoinEvent(eventID uint, claims map[string]interface{}) error
 	UnJoinEvent(eventID uint, claims map[string]interface{}) error
@@ -374,7 +375,61 @@ func (u *eventUsecase) AllCurrentEvent() ([]response.EventResponse, error) {
 	return res, nil
 }
 
-func (u *eventUsecase) MyEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,error){
+func (u *eventUsecase) MyEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,*response.DoneResponse,error){
+	
+	inside,err:= u.eventRepo.AllEventInsideThisYear(userID,year)
+	if err != nil {
+		return nil,nil,nil,err
+	}
+	var insideEvents []response.MyInside
+	for _, event := range inside {
+		mappedEvent := response.MyInside{
+			EventID: event.EventId,
+			EventName: event.Event.EventName,
+			Location: event.Event.Location,
+			StartDate: utility.FormatToThaiDate(event.Event.StartDate),
+			StartTime: utility.FormatToThaiTime(event.Event.StartDate),
+			WorkingHour: event.Event.WorkingHour,
+			SchoolYear: event.Event.SchoolYear,
+			Status:event.Status,
+			Comment: event.Comment,
+			File: event.File,
+		}
+		insideEvents = append(insideEvents, mappedEvent)
+	}
+	outside,err:=u.eventRepo.AllEventOutsideThisYear(userID,year)
+	if err != nil {
+		return nil,nil,nil, err
+	}
+	var outsideEvents []response.MyOutside
+	for _, event := range outside {
+		mappedEvent := response.MyOutside{
+			EventID: event.EventID,
+			EventName: event.EventName,
+			Location: event.Location,
+			StartDate: utility.FormatToThaiDate(event.StartDate),
+			StartTime: utility.FormatToThaiTime(event.StartDate),
+			WorkingHour: event.WorkingHour,
+			SchoolYear: event.SchoolYear,
+			Intendant: event.Intendant,
+			File: event.File,
+		}
+		outsideEvents = append(outsideEvents, mappedEvent)
+	}
+	result ,err := u.userRepo.GetDone(userID,year)
+	if err != nil {
+		return nil,nil,nil,err
+	}
+	dones := response.DoneResponse{
+		User: result.User,
+		Certifier: result.Certifier,
+		Year: result.Year,
+		Status: result.Status,
+		Comment: result.Comment,
+	}
+	return insideEvents,outsideEvents,&dones,nil
+}
+func (u *eventUsecase) SendEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,error){
 	
 	inside,err:= u.eventRepo.AllEventInsideThisYear(userID,year)
 	if err != nil {
@@ -415,9 +470,9 @@ func (u *eventUsecase) MyEventThisYear(userID uint,year uint) ([]response.MyInsi
 		}
 		outsideEvents = append(outsideEvents, mappedEvent)
 	}
+	// dones ,err := u.userRepo.GetDone(userID,year)
 	return insideEvents,outsideEvents,nil
 }
-
 // func (u *eventUsecase) SendEvent(userID uint) error{
 
 

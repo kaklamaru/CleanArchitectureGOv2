@@ -102,6 +102,7 @@ type MyInside struct {
 	Comment     string `json:"comment"`
 	File        string `json:"file"`
 }
+
 // response.StudentYear struct
 type StudentYear struct {
 	UserID      uint   `json:"user_id"`
@@ -117,3 +118,10 @@ type StudentYear struct {
 	Year        uint   `json:"year"`
 }
 
+type DoneResponse struct {
+	User      uint   `json:"user_id"`
+	Certifier uint   `json:"certifier"`
+	Year      uint   `json:"year"`
+	Status    bool   `json:"status"`
+	Comment   string `json:"comment"`
+}

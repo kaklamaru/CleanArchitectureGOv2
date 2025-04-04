@@ -23,7 +23,8 @@ type UserRepository interface {
 	GetAllStudent() ([]entity.Student, error)
 	GetAllStudentID() ([]uint,error)
 	GetSuperUserForStudent(userID uint) (*uint, error) 
-	GetStudentsAndYearsByCertifier(certifierID uint) ([]response.StudentYear, error) 
+	GetStudentsAndYearsByCertifier(certifierID uint) ([]response.StudentYear, error)
+	GetDone(userID uint,year uint) (*entity.Done,error) 
 
 	UpdateTeacherByID(teacher *entity.Teacher) error
 	UpdateStudentByID(student *entity.Student) error
@@ -303,6 +304,13 @@ func (r *userRepository) GetStudentsAndYearsByCertifier(certifierID uint) ([]res
 	return result, nil
 }
 
+func (r *userRepository) GetDone(userID uint,year uint) (*entity.Done,error){
+	var dones entity.Done
+	if err := r.db.Where("user=? AND year=?",userID,year).Find(&dones).Error; err != nil {
+		return nil, fmt.Errorf("repository: failed to retrieve dones: %w", err)
+	}
+	return &dones, nil
+}
 
 func (r *userRepository) UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error {
 	updates := map[string]interface{}{
