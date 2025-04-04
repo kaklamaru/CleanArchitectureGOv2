@@ -44,8 +44,7 @@ type EventRepository interface {
 	GetFilePathOutside(eventID uint, userID uint) (string, error)
 	UploadFileOutside(eventID uint, userID uint, filePath string) error
 	AllEventOutsideThisYear(userID uint, year uint) ([]entity.EventOutside, error)
-	EventOutsideExists(eventID uint, userID uint) (bool, error) 
-
+	EventOutsideExists(eventID uint, userID uint) (bool, error)
 }
 
 type eventRepository struct {
@@ -562,4 +561,3 @@ func (r *eventRepository) DeleteEventByID(eventID uint) error {
 }
 
 */
-

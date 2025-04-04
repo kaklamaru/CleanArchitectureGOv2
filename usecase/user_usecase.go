@@ -18,9 +18,13 @@ type UserUsecase interface {
 	GetUserByClaims(claims map[string]interface{}) (interface{}, error)
 	GetAllTeacher() ([]response.TeacherResponse, error)
 	GetAllStudent() ([]response.StudentResponse, error)
+	SendEvent(year uint,claims map[string]interface{}) error
+	GetStudentsAndYearsByCertifier(claims map[string]interface{}) ([]response.StudentYear,error)
+
 	UpdateTeacherByID(req *request.RegisterTeacher, claims map[string]interface{}) error
 	UpdateStudentByID(req *request.RegisterStudent, claims map[string]interface{}) error
 	UpdateRoleByID(userID uint, role string) error
+	UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error 
 }
 
 type userUsecase struct {
@@ -235,4 +239,56 @@ func (u *userUsecase) UpdateRoleByID(userID uint, role string) error {
 		return u.userRepo.UpdateRoleByID(userID, role)
 	}
 	return fmt.Errorf("incorrect role")
+}
+
+func (u *userUsecase) SendEvent(year uint, claims map[string]interface{}) error {
+	// ดึง user_id จาก claims
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return fmt.Errorf("invalid user_id in claims")
+	}
+	userID := uint(userIDFloat)
+
+	// คำนวณชั่วโมงจาก EventInside และ EventOutside
+	outsideHour, insideHour, err := u.userRepo.GetTotalWorkingHours(userID, year)
+	if err != nil {
+		return fmt.Errorf("failed to get total working hours: %v", err)
+	}
+
+	// ตรวจสอบชั่วโมง
+	if insideHour >= 18 && (outsideHour + insideHour) >= 36 {
+		// ดึง superUserID ของ student
+		superUserID, err := u.userRepo.GetSuperUserForStudent(userID)
+		if err != nil {
+			return fmt.Errorf("failed to get super user: %v", err)
+		}
+		
+		// สร้าง Dones
+		err = u.userRepo.CreateDones(userID, year, *superUserID)
+		if err != nil {
+			return fmt.Errorf("failed to create dones: %v", err)
+		}
+		return nil
+	}
+
+	return fmt.Errorf("insufficient working hours: inside=%d, outside=%d", insideHour, outsideHour)
+}
+
+func (u *userUsecase) GetStudentsAndYearsByCertifier(claims map[string]interface{}) ([]response.StudentYear,error){
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return nil,fmt.Errorf("invalid user_id in claims")
+	}
+	userID := uint(userIDFloat)
+
+	result, err := u.userRepo.GetStudentsAndYearsByCertifier(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (u *userUsecase) UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error {
+	return u.userRepo.UpdateStatusDones(certifierID, userID, status, comment)
 }

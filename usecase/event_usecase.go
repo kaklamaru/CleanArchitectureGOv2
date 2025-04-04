@@ -26,7 +26,7 @@ type EventUsecase interface {
 	MyEvent(claims map[string]interface{}) ([]response.EventResponse, error)
 	AllAllowedEvent() ([]response.EventResponse, error)
 	AllCurrentEvent() ([]response.EventResponse, error)
-	MyEventThisYear(claims map[string]interface{},year uint) ([]response.MyInside,[]response.MyOutside,error)
+	MyEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,error)
 
 	JoinEvent(eventID uint, claims map[string]interface{}) error
 	UnJoinEvent(eventID uint, claims map[string]interface{}) error
@@ -374,12 +374,7 @@ func (u *eventUsecase) AllCurrentEvent() ([]response.EventResponse, error) {
 	return res, nil
 }
 
-func (u *eventUsecase) MyEventThisYear(claims map[string]interface{},year uint) ([]response.MyInside,[]response.MyOutside,error){
-	userIDFloat, ok := claims["user_id"].(float64)
-	if !ok {
-		return nil,nil, fmt.Errorf("invalid user_id in claims")
-	}
-	userID := uint(userIDFloat)
+func (u *eventUsecase) MyEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,error){
 	
 	inside,err:= u.eventRepo.AllEventInsideThisYear(userID,year)
 	if err != nil {

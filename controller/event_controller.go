@@ -217,8 +217,13 @@ func (c *EventController) MyEventThisYear(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return fmt.Errorf("invalid user_id in claims")
+	}
+	userID := uint(userIDFloat)
 
-	insideEvents, outsideEvents, err := c.eventUsecase.MyEventThisYear(claims, year)
+	insideEvents, outsideEvents, err := c.eventUsecase.MyEventThisYear(userID, year)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
@@ -231,6 +236,36 @@ func (c *EventController) MyEventThisYear(ctx *fiber.Ctx) error {
 	})
 }
 
+func (c *EventController) AllSendEventThisYear(ctx *fiber.Ctx) error {
+	yearStr := ctx.Params("year")
+	yearInt, err := strconv.Atoi(yearStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid year",
+		})
+	}
+	year := uint(yearInt)
+	userStr := ctx.Params("userid")
+	userInt, err := strconv.Atoi(userStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid year",
+		})
+	}
+	userID := uint(userInt)
+
+	insideEvents, outsideEvents, err := c.eventUsecase.MyEventThisYear(userID, year)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"inside_events":  insideEvents,
+		"outside_events": outsideEvents,
+	})
+}
 
 // Inside
 func (c *EventController) JoinEvent(ctx *fiber.Ctx) error {

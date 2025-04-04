@@ -95,11 +95,15 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 
 	// outside
 	student.Post("/outside", eventContro.CreateEventOutside)
-	student.Delete("/outside/:ID", eventContro.DeleteEventOutsideByID)
+	student.Delete("/outside/:id", eventContro.DeleteEventOutsideByID)
 	student.Get("/download/:id", eventContro.CreateFile)
 	student.Put("/upload-outside/:id", eventContro.UploadFileOutside)
 	protected.Get("/file-outside/:eventid/:userid", eventContro.GetFileOutside)
 
-	
+	student.Post("/send-event/:year",userContro.SendEvent)
+	teacher.Get("/superuser-check",userContro.GetStudentsAndYearsByCertifier)
+	teacher.Get("/all-event/:userid/:year",eventContro.AllSendEventThisYear)
+	teacher.Put("/check-all-event/:userid",userContro.UpdateStatusDones)
+
 
 }

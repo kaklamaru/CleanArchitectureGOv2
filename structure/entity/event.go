@@ -50,25 +50,34 @@ type EventOutside struct {
 	// Comment     string    `json:"comment"`
 }
 
+// type Done struct {
+// 	User      uint    `gorm:"primaryKey" json:"user_id"`
+// 	Student   Student `gorm:"foreignKey:User;references:UserID" json:"student"`
+// 	Certifier uint    `gorm:"default:null" json:"certifier"`
+// 	Teacher   Teacher `gorm:"foreignKey:Certifier;references:UserID" json:"teacher"`
+// 	Status    bool    `json:"status"`
+// 	Comment   string  `json:"comment"`
+// }
 type Done struct {
 	User      uint    `gorm:"primaryKey" json:"user_id"`
 	Student   Student `gorm:"foreignKey:User;references:UserID" json:"student"`
 	Certifier uint    `gorm:"default:null" json:"certifier"`
 	Teacher   Teacher `gorm:"foreignKey:Certifier;references:UserID" json:"teacher"`
-	Status    bool    `json:"status"`
+	Year      uint    `gorm:"not null" json:"year"` // เพิ่ม field นี้
+	Status    bool    `json:"status"`               // ใช้ *bool ให้ null ได้ (รอตรวจ)
 	Comment   string  `json:"comment"`
+	// UpdatedAt  time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 type News struct {
-    NewsID    uint      `gorm:"primaryKey;autoIncrement" json:"news_id"`
-    Title     string    `json:"title"`
-    UserID    uint      `json:"user_id"`
-    User      User      `gorm:"foreignKey:UserID;references:UserID" json:"user"`
-    Message   string    `json:"message"`
-    IsRead    bool      `gorm:"default:false" json:"is_read"`
-    CreatedAt time.Time `json:"created_at"`
+	NewsID    uint      `gorm:"primaryKey;autoIncrement" json:"news_id"`
+	Title     string    `json:"title"`
+	UserID    uint      `json:"user_id"`
+	User      User      `gorm:"foreignKey:UserID;references:UserID" json:"user"`
+	Message   string    `json:"message"`
+	IsRead    bool      `gorm:"default:false" json:"is_read"`
+	CreatedAt time.Time `json:"created_at"`
 }
-
 
 type Permission struct {
 	BranchIDs      string `json:"branches"`

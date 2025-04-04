@@ -1,6 +1,8 @@
 package response
 
-import "time"
+import (
+	"time"
+)
 
 type StudentResponse struct {
 	UserID      uint   `json:"user_id"`
@@ -85,7 +87,7 @@ type MyOutside struct {
 	WorkingHour uint   `json:"working_hour"`
 	SchoolYear  uint   `json:"school_year"`
 	Intendant   string `json:"intendent"`
-	File   string  `json:"file"`
+	File        string `json:"file"`
 }
 
 type MyInside struct {
@@ -98,5 +100,20 @@ type MyInside struct {
 	SchoolYear  uint   `json:"school_year"`
 	Status      bool   `json:"status"`
 	Comment     string `json:"comment"`
-	File   string  `json:"file"`
+	File        string `json:"file"`
 }
+// response.StudentYear struct
+type StudentYear struct {
+	UserID      uint   `json:"user_id"`
+	TitleName   string `json:"title_name"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Phone       string `json:"phone"`
+	Code        string `json:"code"`
+	BranchID    uint   `json:"branch_id"`
+	BranchName  string `json:"branch_name"`
+	FacultyID   uint   `json:"faculty_id"`
+	FacultyName string `json:"faculty_name"`
+	Year        uint   `json:"year"`
+}
+

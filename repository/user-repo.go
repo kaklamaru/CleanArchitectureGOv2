@@ -14,16 +14,23 @@ type UserRepository interface {
 	CreateTeacher(user *entity.User, teacher *entity.Teacher) error
 	CreateStudent(user *entity.User, student *entity.Student) error
 	GetUserByEmail(email string) (*entity.User, error)
+	CreateDones(userID uint,year uint,superUserID uint)error
+	GetTotalWorkingHours(userID uint, year uint) (uint, uint, error) 
 
 	GetTeacherByID(userID uint) (*entity.Teacher, error)
 	GetStudentByID(userID uint) (*entity.Student, error)
 	GetAllTeacher() ([]response.TeacherResponse, error)
 	GetAllStudent() ([]entity.Student, error)
 	GetAllStudentID() ([]uint,error)
+	GetSuperUserForStudent(userID uint) (*uint, error) 
+	GetStudentsAndYearsByCertifier(certifierID uint) ([]response.StudentYear, error) 
 
 	UpdateTeacherByID(teacher *entity.Teacher) error
 	UpdateStudentByID(student *entity.Student) error
+	UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error 
+
 	UpdateRoleByID(userID uint, role string) error
+	
 }
 
 type userRepository struct {
@@ -202,6 +209,110 @@ func (r *userRepository) UpdateRoleByID(userID uint, role string) error {
 	existing.Role = role
 	if err := r.db.Save(&existing).Error; err != nil {
 		return err
+	}
+	return nil
+}
+
+func (r *userRepository) GetSuperUserForStudent(userID uint) (*uint, error) {
+	var superUserID *uint
+	err := r.db.Model(&entity.Student{}).
+		Select("faculties.super_user").
+		Joins("JOIN branches ON students.branch_id = branches.branch_id").
+		Joins("JOIN faculties ON branches.faculty_id = faculties.faculty_id").
+		Where("students.user_id = ?", userID).
+		Scan(&superUserID).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to find super user for student: %w", err)
+	}
+	return superUserID, nil
+}
+
+func (r *userRepository) CreateDones(userID uint, year uint, superUserID uint) error {
+	var done entity.Done
+
+	err := r.db.Where("user = ? AND year = ?", userID, year).First(&done).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			newDone := entity.Done{
+				User:    userID,
+				Certifier: superUserID,
+				Year:      year,
+				Status:    false,
+			}
+			return r.db.Create(&newDone).Error
+		}
+		return err
+	}
+
+	if !done.Status {
+		done.Comment = ""
+		done.Certifier = superUserID 
+		return r.db.Save(&done).Error
+	}
+
+	return fmt.Errorf("document for year %d already approved", year)
+}
+
+func (r *userRepository) GetTotalWorkingHours(userID uint, year uint) (uint, uint, error) {
+	var eventOutsideHours uint
+	var eventInsideHours uint
+
+	// รวมชั่วโมงจาก EventOutside
+	err := r.db.Model(&entity.EventOutside{}).
+		Select("COALESCE(SUM(working_hour), 0)").
+		Where("user = ?", userID).
+		Where("school_year = ?", year).
+		Scan(&eventOutsideHours).Error
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// รวมชั่วโมงจาก EventInside
+	err = r.db.Model(&entity.EventInside{}).
+		Joins("JOIN events ON event_insides.event_id = events.event_id").
+		Select("COALESCE(SUM(events.working_hour), 0)").
+		Where("event_insides.user = ?", userID).
+		Where("events.school_year = ?", year).
+		Where("event_insides.status = ?", true).
+		Scan(&eventInsideHours).Error
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return eventOutsideHours, eventInsideHours, nil
+}
+
+func (r *userRepository) GetStudentsAndYearsByCertifier(certifierID uint) ([]response.StudentYear, error) {
+	var result []response.StudentYear
+
+	err := r.db.Model(&entity.Done{}).
+		Joins("JOIN students ON dones.user = students.user_id").
+		Joins("JOIN branches ON students.branch_id = branches.branch_id").
+		Joins("JOIN faculties ON branches.faculty_id = faculties.faculty_id").
+		Where("dones.certifier = ?", certifierID).
+		Where("dones.status = ?", false).
+		Where("dones.comment = ?","").
+		Select("students.user_id, students.title_name, students.first_name, students.last_name, students.phone, students.code, branches.branch_id, branches.branch_name, faculties.faculty_id, faculties.faculty_name, dones.year").
+		Scan(&result).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get students and years: %v", err)
+	}
+
+	return result, nil
+}
+
+
+func (r *userRepository) UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error {
+	updates := map[string]interface{}{
+		"status":  status,
+		"comment": comment,
+	}
+	if err := r.db.Model(&entity.Done{}).
+		Where("certifier = ? AND user = ?", certifierID, userID).
+		Updates(updates).Error; err != nil {
+		return fmt.Errorf("failed to update event: %w", err)
 	}
 	return nil
 }
