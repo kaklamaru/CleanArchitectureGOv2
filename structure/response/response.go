@@ -26,6 +26,17 @@ type TeacherResponse struct {
 	Phone     string `json:"phone"`
 	Code      string `json:"code"`
 	Role      string `json:"role"`
+	SuperUser bool   `json:"super_user"`
+}
+type TeacherByClaimsResponse struct {
+	UserID    uint   `json:"user_id"`
+	TitleName string `json:"title_name"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Phone     string `json:"phone"`
+	Code      string `json:"code"`
+	// Role      string `json:"role"`
+	SuperUser bool   `json:"super_user"`
 }
 
 type EventResponse struct {

@@ -17,7 +17,8 @@ type UserRepository interface {
 	CreateDones(userID uint,year uint,superUserID uint)error
 	GetTotalWorkingHours(userID uint, year uint) (uint, uint, error) 
 
-	GetTeacherByID(userID uint) (*entity.Teacher, error)
+	// GetTeacherByID(userID uint) (*entity.Teacher, error)
+	GetTeacherByID(userID uint) (*entity.Teacher, bool, error)
 	GetStudentByID(userID uint) (*entity.Student, error)
 	GetAllTeacher() ([]response.TeacherResponse, error)
 	GetAllStudent() ([]entity.Student, error)
@@ -101,13 +102,27 @@ func (r *userRepository) GetUserByEmail(email string) (*entity.User, error) {
 }
 
 // information
-func (r *userRepository) GetTeacherByID(userID uint) (*entity.Teacher, error) {
+func (r *userRepository) GetTeacherByID(userID uint) (*entity.Teacher, bool, error) {
 	var teacher entity.Teacher
+
+	// ดึง teacher ก่อน
 	if err := r.db.Where("user_id = ?", userID).First(&teacher).Error; err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return &teacher, nil
+
+	// ตรวจสอบว่ามี faculty ไหนที่ super_user = userID
+	var count int64
+	if err := r.db.Model(&entity.Faculty{}).
+		Where("super_user = ?", userID).
+		Count(&count).Error; err != nil {
+		return &teacher, false, err
+	}
+
+	isSuperUser := count > 0
+
+	return &teacher, isSuperUser, nil
 }
+
 
 func (r *userRepository) GetStudentByID(userID uint) (*entity.Student, error) {
 	var student entity.Student

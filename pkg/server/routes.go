@@ -101,7 +101,9 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	protected.Get("/file-outside/:eventid/:userid", eventContro.GetFileOutside)
 
 	student.Post("/send-event/:year",userContro.SendEvent)
+
 	teacher.Get("/superuser-check",userContro.GetStudentsAndYearsByCertifier)
+	
 	teacher.Get("/all-event/:userid/:year",eventContro.AllSendEventThisYear)
 	teacher.Put("/check-all-event/:userid",userContro.UpdateStatusDones)
 

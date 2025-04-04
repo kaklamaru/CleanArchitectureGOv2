@@ -111,12 +111,22 @@ func (u *userUsecase) GetUserByEmail(email string, password string) (string, str
 	return token, user.Role, nil
 }
 
-func (u *userUsecase) getTeacherByUserID(userID uint) (*entity.Teacher, error) {
-	teacher, err := u.userRepo.GetTeacherByID(userID)
+func (u *userUsecase) getTeacherByUserID(userID uint) (*response.TeacherByClaimsResponse, error) {
+	result,superUser, err := u.userRepo.GetTeacherByID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get teacher by user id %d: %w", userID, err)
 	}
-	return teacher, nil
+	teacher := response.TeacherByClaimsResponse{
+		UserID: result.UserID,
+		TitleName: result.TitleName,
+		FirstName: result.FirstName,
+		LastName: result.LastName,
+		Phone: result.Phone,
+		Code: result.Code,
+		SuperUser: superUser,
+
+	}
+	return &teacher, nil
 }
 
 func (u *userUsecase) MapStudentResponse(s *entity.Student) response.StudentResponse {
