@@ -304,13 +304,26 @@ func (r *userRepository) GetStudentsAndYearsByCertifier(certifierID uint) ([]res
 	return result, nil
 }
 
-func (r *userRepository) GetDone(userID uint,year uint) (*entity.Done,error){
-	var dones entity.Done
-	if err := r.db.Where("user=? AND year=?",userID,year).Find(&dones).Error; err != nil {
-		return nil, fmt.Errorf("repository: failed to retrieve dones: %w", err)
+// func (r *userRepository) GetDone(userID uint,year uint) (*entity.Done,error){
+// 	var dones entity.Done
+// 	if err := r.db.Where("user=? AND year=?",userID,year).Find(&dones).Error; err != nil {
+// 		return nil, fmt.Errorf("repository: failed to retrieve dones: %w", err)
+// 	}
+// 	return &dones, nil
+// }
+
+func (r *userRepository) GetDone(userID uint, year uint) (*entity.Done, error) {
+	var done entity.Done
+	err := r.db.Where("user = ? AND year = ?", userID, year).First(&done).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil // ยังไม่ส่งข้อมูล
 	}
-	return &dones, nil
+	if err != nil {
+		return nil, err
+	}
+	return &done, nil
 }
+
 
 func (r *userRepository) UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error {
 	updates := map[string]interface{}{

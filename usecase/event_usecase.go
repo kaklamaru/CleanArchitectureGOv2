@@ -420,14 +420,19 @@ func (u *eventUsecase) MyEventThisYear(userID uint,year uint) ([]response.MyInsi
 	if err != nil {
 		return nil,nil,nil,err
 	}
-	dones := response.DoneResponse{
-		User: result.User,
-		Certifier: result.Certifier,
-		Year: result.Year,
-		Status: result.Status,
-		Comment: result.Comment,
+	if result == nil{
+		return insideEvents,outsideEvents,nil,nil
+	}else{
+		dones := response.DoneResponse{
+			User: result.User,
+			Certifier: result.Certifier,
+			Year: result.Year,
+			Status: result.Status,
+			Comment: result.Comment,
+		}
+		return insideEvents,outsideEvents,&dones,nil
 	}
-	return insideEvents,outsideEvents,&dones,nil
+
 }
 func (u *eventUsecase) SendEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,error){
 	
