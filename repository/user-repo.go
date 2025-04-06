@@ -32,7 +32,12 @@ type UserRepository interface {
 	UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error 
 
 	UpdateRoleByID(userID uint, role string) error
-	
+
+	GetNews(userID uint) ([]entity.News, error)
+	MarkNewsAsRead(newsID uint) error
+
+	GetDoneByYearAndStatus(year uint, status bool) ([]entity.Done, error)
+	GetDoneFiltered(year uint, status bool, facultyID *uint) ([]entity.Done, error) 
 }
 
 type userRepository struct {
@@ -352,3 +357,49 @@ func (r *userRepository) UpdateStatusDones(certifierID uint, userID uint, status
 	}
 	return nil
 }
+
+func (r *userRepository) GetNews(userID uint) ([]entity.News, error) {
+	var newsList []entity.News
+	err := r.db.Where("user_id = ?", userID).Order("created_at desc").Find(&newsList).Error
+	if err != nil {
+		return nil, err
+	}
+	return newsList, nil
+}
+
+func (r *userRepository) MarkNewsAsRead(newsID uint) error {
+	err := r.db.Model(&entity.News{}).Where("news_id = ?", newsID).Update("is_read", true).Error
+	return err
+}
+
+func (r *userRepository) GetDoneByYearAndStatus(year uint, status bool) ([]entity.Done, error) {
+	var dones []entity.Done
+	err := r.db.
+		Preload("Student.Branch.Faculty").
+		Preload("Teacher").
+		Where("year = ? AND status = ?", year, status).
+		Find(&dones).Error
+	if err != nil {
+		return nil, err
+	}
+	return dones, nil
+}
+func (r *userRepository) GetDoneFiltered(year uint, status bool, facultyID *uint) ([]entity.Done, error) {
+	var dones []entity.Done
+
+	query := r.db.Table("dones").
+		Joins("JOIN students ON students.user_id = dones.user").
+		Joins("JOIN branches ON branches.branch_id = students.branch_id").
+		Where("dones.year = ? AND dones.status = ?", year, status)
+
+	if facultyID != nil {
+		query = query.Where("branches.faculty_id = ?", *facultyID)
+	}
+
+	if err := query.Preload("Student").Preload("Student.Branch").Preload("Student.Branch.Faculty").Find(&dones).Error; err != nil {
+		return nil, err
+	}
+
+	return dones, nil
+}
+

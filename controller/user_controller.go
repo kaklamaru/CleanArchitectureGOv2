@@ -285,3 +285,90 @@ func (c *UserController) UpdateStatusDones(ctx *fiber.Ctx) error {
 		"message": "Checking all event successfully",
 	})
 }
+
+func (c *UserController) GetNews(ctx *fiber.Ctx) error{
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "failed to retrieve claims",
+		})
+	}
+	news, err := c.userUsecase.GetNews(claims)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": fmt.Sprintf("failed to get: %v", err),
+		})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(news)
+}
+
+func (c *UserController) MarkNewsAsRead(ctx *fiber.Ctx) error{
+	idStr := ctx.Params("newsid")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid id format",
+		})
+	}
+	newsID := uint(id)
+
+	if err := c.userUsecase.MarkNewsAsRead(newsID); err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "update status read successfully",
+	})
+}
+
+
+func (c *UserController) GetDoneFiltered(ctx *fiber.Ctx) error {
+	// ดึง year (จำเป็นต้องมี)
+	yearStr := ctx.Query("year")
+	year, err := strconv.Atoi(yearStr)
+	if err != nil || yearStr == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid or missing 'year' parameter",
+		})
+	}
+
+	// ดึง status (จำเป็นต้องมี)
+	statusStr := ctx.Query("status")
+	if statusStr == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "missing 'status' parameter",
+		})
+	}
+	status, err := strconv.ParseBool(statusStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid 'status' value (must be true or false)",
+		})
+	}
+
+	// ดึง faculty_id (ไม่จำเป็น)
+	var facultyID *uint
+	facultyIDStr := ctx.Query("faculty_id")
+	if facultyIDStr != "" {
+		fid, err := strconv.Atoi(facultyIDStr)
+		if err != nil {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "invalid 'faculty_id' format",
+			})
+		}
+		fidUint := uint(fid)
+		facultyID = &fidUint
+	}
+
+	// เรียกใช้ usecase
+	lists, err := c.userUsecase.GetDoneFiltered(uint(year), status, facultyID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": fmt.Sprintf("failed to get: %v", err),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(lists)
+}
+

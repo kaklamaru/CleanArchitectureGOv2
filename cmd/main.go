@@ -20,7 +20,7 @@ func deleteOldNews(db database.Database) {
 			log.Printf("Deleted %d old news data successfully.", result.RowsAffected)
 		}
 
-		time.Sleep(8 * time.Hour)
+		time.Sleep(24 * time.Hour)
 	}
 }
 

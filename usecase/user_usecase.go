@@ -18,13 +18,19 @@ type UserUsecase interface {
 	GetUserByClaims(claims map[string]interface{}) (interface{}, error)
 	GetAllTeacher() ([]response.TeacherResponse, error)
 	GetAllStudent() ([]response.StudentResponse, error)
-	SendEvent(year uint,claims map[string]interface{}) error
-	GetStudentsAndYearsByCertifier(claims map[string]interface{}) ([]response.StudentYear,error)
+	SendEvent(year uint, claims map[string]interface{}) error
+	GetStudentsAndYearsByCertifier(claims map[string]interface{}) ([]response.StudentYear, error)
 
 	UpdateTeacherByID(req *request.RegisterTeacher, claims map[string]interface{}) error
 	UpdateStudentByID(req *request.RegisterStudent, claims map[string]interface{}) error
 	UpdateRoleByID(userID uint, role string) error
-	UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error 
+	UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error
+
+	MarkNewsAsRead(newsID uint) error
+	GetNews(claims map[string]interface{}) ([]response.NewsResponse, error)
+
+	GetDoneFiltered(year uint, status bool, facultyID *uint) ([]response.ListResponse,error)
+
 }
 
 type userUsecase struct {
@@ -112,19 +118,18 @@ func (u *userUsecase) GetUserByEmail(email string, password string) (string, str
 }
 
 func (u *userUsecase) getTeacherByUserID(userID uint) (*response.TeacherByClaimsResponse, error) {
-	result,superUser, err := u.userRepo.GetTeacherByID(userID)
+	result, superUser, err := u.userRepo.GetTeacherByID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get teacher by user id %d: %w", userID, err)
 	}
 	teacher := response.TeacherByClaimsResponse{
-		UserID: result.UserID,
+		UserID:    result.UserID,
 		TitleName: result.TitleName,
 		FirstName: result.FirstName,
-		LastName: result.LastName,
-		Phone: result.Phone,
-		Code: result.Code,
+		LastName:  result.LastName,
+		Phone:     result.Phone,
+		Code:      result.Code,
 		SuperUser: superUser,
-
 	}
 	return &teacher, nil
 }
@@ -204,8 +209,6 @@ func (u *userUsecase) GetAllStudent() ([]response.StudentResponse, error) {
 	return res, nil
 }
 
-
-
 func (u *userUsecase) UpdateTeacherByID(req *request.RegisterTeacher, claims map[string]interface{}) error {
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
@@ -266,13 +269,13 @@ func (u *userUsecase) SendEvent(year uint, claims map[string]interface{}) error 
 	}
 
 	// ตรวจสอบชั่วโมง
-	if insideHour >= 18 && (outsideHour + insideHour) >= 36 {
+	if insideHour >= 18 && (outsideHour+insideHour) >= 36 {
 		// ดึง superUserID ของ student
 		superUserID, err := u.userRepo.GetSuperUserForStudent(userID)
 		if err != nil {
 			return fmt.Errorf("failed to get super user: %v", err)
 		}
-		
+
 		// สร้าง Dones
 		err = u.userRepo.CreateDones(userID, year, *superUserID)
 		if err != nil {
@@ -284,10 +287,10 @@ func (u *userUsecase) SendEvent(year uint, claims map[string]interface{}) error 
 	return fmt.Errorf("insufficient working hours: inside=%d, outside=%d", insideHour, outsideHour)
 }
 
-func (u *userUsecase) GetStudentsAndYearsByCertifier(claims map[string]interface{}) ([]response.StudentYear,error){
+func (u *userUsecase) GetStudentsAndYearsByCertifier(claims map[string]interface{}) ([]response.StudentYear, error) {
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
-		return nil,fmt.Errorf("invalid user_id in claims")
+		return nil, fmt.Errorf("invalid user_id in claims")
 	}
 	userID := uint(userIDFloat)
 
@@ -301,4 +304,75 @@ func (u *userUsecase) GetStudentsAndYearsByCertifier(claims map[string]interface
 
 func (u *userUsecase) UpdateStatusDones(certifierID uint, userID uint, status bool, comment string) error {
 	return u.userRepo.UpdateStatusDones(certifierID, userID, status, comment)
+}
+func (u *userUsecase) GetNews(claims map[string]interface{}) ([]response.NewsResponse, error) {
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("invalid user_id in claims")
+	}
+	userID := uint(userIDFloat)
+
+	result, err := u.userRepo.GetNews(userID)
+	if err != nil {
+		return nil, err
+	}
+	var news []response.NewsResponse
+	for _, r := range result {
+		n := response.NewsResponse{
+			NewsID: r.NewsID,
+			Title: r.Title,
+			UserID: r.UserID,
+			Message: r.Message,
+			IsRead: r.IsRead,
+			// CreatedAt: r.CreatedAt,
+		}
+		news = append(news, n)
+	}
+
+	return news, nil
+}
+
+func (u *userUsecase) MarkNewsAsRead(newsID uint) error {
+	err := u.userRepo.MarkNewsAsRead(newsID)
+	if err != nil {
+		return fmt.Errorf("failed to update read: %v", err)
+	}
+	return nil
+}
+
+func (u *userUsecase) GetDoneFiltered(year uint, status bool, facultyID *uint) ([]response.ListResponse,error){
+	result,err:= u.userRepo.GetDoneFiltered(year,status,facultyID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get: %v", err)
+	}
+	var list []response.ListResponse
+	for _, r := range result {
+		l := response.ListResponse{
+			UserID: r.User,
+			Student: struct {
+				TitleName   string `json:"title_name"`
+				FirstName   string `json:"first_name"`
+				LastName    string `json:"last_name"`
+				Phone       string `json:"phone"`
+				Code        string `json:"code"`
+				Year        uint   `json:"year"`
+				BranchName  string `json:"branch_name"`
+				FacultyName string `json:"faculty_name"`
+			}{
+				TitleName:   r.Student.TitleName,
+				FirstName:   r.Student.FirstName,
+				LastName:    r.Student.LastName,
+				Phone:       r.Student.Phone,
+				Code:        r.Student.Code,
+				Year:        r.Student.Year,
+				BranchName:  r.Student.Branch.BranchName,
+				FacultyName: r.Student.Branch.Faculty.FacultyName,
+			},
+			Status:  r.Status,
+			Comment: r.Comment,
+		}
+		list = append(list, l)
+	}
+
+	return list, nil
 }

@@ -107,5 +107,10 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	teacher.Get("/all-event/:userid/:year",eventContro.AllSendEventThisYear)
 	teacher.Put("/check-all-event/:userid",userContro.UpdateStatusDones)
 
+	protected.Get("/news",userContro.GetNews)
+	protected.Put("/news/:newsid",userContro.MarkNewsAsRead)
+
+	admin.Get("/done", userContro.GetDoneFiltered)
+
 
 }

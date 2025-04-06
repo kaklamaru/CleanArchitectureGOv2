@@ -66,8 +66,8 @@ type Done struct {
 	Year      uint    `gorm:"not null" json:"year"` // เพิ่ม field นี้
 	Status    bool    `json:"status"`               // ใช้ *bool ให้ null ได้ (รอตรวจ)
 	Comment   string  `json:"comment"`
-	// UpdatedAt  time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
+// UpdatedAt  time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
 type News struct {
 	NewsID    uint      `gorm:"primaryKey;autoIncrement" json:"news_id"`

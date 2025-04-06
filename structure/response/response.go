@@ -36,7 +36,7 @@ type TeacherByClaimsResponse struct {
 	Phone     string `json:"phone"`
 	Code      string `json:"code"`
 	// Role      string `json:"role"`
-	SuperUser bool   `json:"super_user"`
+	SuperUser bool `json:"super_user"`
 }
 
 type EventResponse struct {
@@ -135,4 +135,29 @@ type DoneResponse struct {
 	Year      uint   `json:"year"`
 	Status    bool   `json:"status"`
 	Comment   string `json:"comment"`
+}
+
+type NewsResponse struct {
+	NewsID    uint      `json:"news_id"`
+	Title     string    `json:"title"`
+	UserID    uint      `json:"user_id"`
+	Message   string    `json:"message"`
+	IsRead    bool      `json:"is_read"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type ListResponse struct{
+	UserID    uint   `json:"user_id"`
+	Student struct{
+		TitleName string `json:"title_name"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Phone     string `json:"phone"`
+		Code      string `json:"code"`
+		Year      uint   `json:"year"`
+		BranchName string  `json:"branch_name"`
+		FacultyName string `json:"faculty_name"`
+	}
+	Status    bool    `json:"status"`
+	Comment   string  `json:"comment"`
 }
