@@ -46,7 +46,8 @@ func NewServer(cfg *config.Config, db database.Database, jwt *jwt.JWTService) (S
 
 func setupCors(app *fiber.App) {
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3000/, http://127.0.0.1:8080",
+		// AllowOrigins: "http://localhost:3000/, http://127.0.0.1:8080,",
+		AllowOrigins: "https://www.activitiesmanagement.online",
 		// AllowOrigins:     cfg.CorsAllowOrigins,  // ใช้ค่าจาก config หรือ environment
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",

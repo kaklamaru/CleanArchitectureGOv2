@@ -1,0 +1,23 @@
+uploads
+fly.toml
+
+
+# Don't copy dev junk into Docker image
+.git
+.gitignore
+Dockerfile
+README.md
+*.md
+
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/
+
+# Local dev files
+.env
+*.log
+*.db
+
+# Fly config
+.fly/

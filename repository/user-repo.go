@@ -334,7 +334,7 @@ func (r *userRepository) GetStudentsAndYearsByCertifier(certifierID uint) ([]res
 
 func (r *userRepository) GetDone(userID uint, year uint) (*entity.Done, error) {
 	var done entity.Done
-	err := r.db.Where("user = ? AND year = ?", userID, year).First(&done).Error
+	err := r.db.Where("user = ? AND year = ? ", userID, year).First(&done).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil // ยังไม่ส่งข้อมูล
 	}

@@ -26,8 +26,8 @@ type EventUsecase interface {
 	MyEvent(claims map[string]interface{}) ([]response.EventResponse, error)
 	AllAllowedEvent() ([]response.EventResponse, error)
 	AllCurrentEvent() ([]response.EventResponse, error)
-	MyEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,*response.DoneResponse,error)
-	SendEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,error)
+	MyEventThisYear(userID uint, year uint) ([]response.MyInside, []response.MyOutside, *response.DoneResponse, error)
+	SendEventThisYear(userID uint, year uint) ([]response.MyInside, []response.MyOutside, error)
 
 	JoinEvent(eventID uint, claims map[string]interface{}) error
 	UnJoinEvent(eventID uint, claims map[string]interface{}) error
@@ -36,13 +36,12 @@ type EventUsecase interface {
 	MyChecklist(eventID uint, claims map[string]interface{}) ([]response.MyChecklist, error)
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
 
-	CreateEventOutside(req request.OutsideRequest,claims map[string]interface{}) error
+	CreateEventOutside(req request.OutsideRequest, claims map[string]interface{}) error
 	DeleteEventOutsideByID(eventID uint) error
 	GetEventOutsideByID(eventID uint) (*response.OutsideResponse, error)
 	CreateFile(eventID uint) ([]byte, string, error)
-	GetFileOutside(eventID uint ,userID uint)(string,error)
-	UploadFileOutside(eventID uint, claims map[string]interface{}, file *multipart.FileHeader) error 
-
+	GetFileOutside(eventID uint, userID uint) (string, error)
+	UploadFileOutside(eventID uint, claims map[string]interface{}, file *multipart.FileHeader) error
 }
 
 type eventUsecase struct {
@@ -105,30 +104,6 @@ func mapEventResponse(event entity.Event, count uint) (*response.EventResponse, 
 	}, nil
 }
 
-// func mapEventOutside(outside entity.EventOutside) (*response.OutsideResponse,error){
-// 	outsideRes := response.OutsideResponse{
-// 		EventID:     outside.EventID,
-// 		EventName:   outside.EventName,
-// 		Location:    outside.Location,
-// 		SchoolYear: outside.SchoolYear,
-// 		StartDate:   outside.StartDate,
-// 		WorkingHour: outside.WorkingHour,
-// 		Intendant:   outside.Intendant,
-// 		Student: response.StudentResponse{
-// 			UserID:      outside.Student.UserID,
-// 			TitleName:   outside.Student.TitleName,
-// 			FirstName:   outside.Student.FirstName,
-// 			LastName:    outside.Student.LastName,
-// 			Phone:       outside.Student.Phone,
-// 			Code:        outside.Student.Code,
-// 			BranchID: outside.Student.BranchId,
-// 			BranchName:  outside.Student.Branch.BranchName,
-// 			FacultyID: outside.Student.Branch.Faculty.FacultyID,
-// 			FacultyName: outside.Student.Branch.Faculty.FacultyName,
-// 		},
-// 	}
-// 	return &outsideRes, nil
-// }
 
 func (u *eventUsecase) validateBranches(branches []uint) error {
 	for _, branchID := range branches {
@@ -298,7 +273,6 @@ func (u *eventUsecase) UpdateEventByID(eventID uint, claims map[string]interface
 	return u.eventRepo.UpdateEventWithTransaction(eventID, userID, req)
 }
 
-
 func (u *eventUsecase) DeleteEventByID(eventID uint, claims map[string]interface{}) error {
 	userIDFloat, ok := claims["user_id"].(float64)
 	if !ok {
@@ -375,113 +349,115 @@ func (u *eventUsecase) AllCurrentEvent() ([]response.EventResponse, error) {
 	return res, nil
 }
 
-func (u *eventUsecase) MyEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,*response.DoneResponse,error){
-	
-	inside,err:= u.eventRepo.AllEventInsideThisYear(userID,year)
+func (u *eventUsecase) MyEventThisYear(userID uint, year uint) ([]response.MyInside, []response.MyOutside, *response.DoneResponse, error) {
+
+	inside, err := u.eventRepo.AllEventInsideThisYear(userID, year)
 	if err != nil {
-		return nil,nil,nil,err
+		return nil, nil, nil, err
 	}
 	var insideEvents []response.MyInside
 	for _, event := range inside {
 		mappedEvent := response.MyInside{
-			EventID: event.EventId,
-			EventName: event.Event.EventName,
-			Location: event.Event.Location,
-			StartDate: utility.FormatToThaiDate(event.Event.StartDate),
-			StartTime: utility.FormatToThaiTime(event.Event.StartDate),
+			EventID:     event.EventId,
+			EventName:   event.Event.EventName,
+			Location:    event.Event.Location,
+			StartDate:   utility.FormatToThaiDate(event.Event.StartDate),
+			StartTime:   utility.FormatToThaiTime(event.Event.StartDate),
 			WorkingHour: event.Event.WorkingHour,
-			SchoolYear: event.Event.SchoolYear,
-			Status:event.Status,
-			Comment: event.Comment,
-			File: event.File,
+			SchoolYear:  event.Event.SchoolYear,
+			Status:      event.Status,
+			Comment:     event.Comment,
+			File:        event.File,
 		}
 		insideEvents = append(insideEvents, mappedEvent)
 	}
-	outside,err:=u.eventRepo.AllEventOutsideThisYear(userID,year)
+	outside, err := u.eventRepo.AllEventOutsideThisYear(userID, year)
 	if err != nil {
-		return nil,nil,nil, err
+		return nil, nil, nil, err
 	}
 	var outsideEvents []response.MyOutside
 	for _, event := range outside {
 		mappedEvent := response.MyOutside{
-			EventID: event.EventID,
-			EventName: event.EventName,
-			Location: event.Location,
-			StartDate: utility.FormatToThaiDate(event.StartDate),
-			StartTime: utility.FormatToThaiTime(event.StartDate),
+			EventID:     event.EventID,
+			EventName:   event.EventName,
+			Location:    event.Location,
+			StartDate:   utility.FormatToThaiDate(event.StartDate),
+			StartTime:   utility.FormatToThaiTime(event.StartDate),
 			WorkingHour: event.WorkingHour,
-			SchoolYear: event.SchoolYear,
-			Intendant: event.Intendant,
-			File: event.File,
+			SchoolYear:  event.SchoolYear,
+			Intendant:   event.Intendant,
+			File:        event.File,
 		}
 		outsideEvents = append(outsideEvents, mappedEvent)
 	}
-	result ,err := u.userRepo.GetDone(userID,year)
+	result, err := u.userRepo.GetDone(userID, year)
 	if err != nil {
-		return nil,nil,nil,err
+		return nil, nil, nil, err
 	}
-	if result == nil{
-		return insideEvents,outsideEvents,nil,nil
-	}else{
+	if result == nil {
+		return insideEvents, outsideEvents, nil, nil
+	} else {
 		dones := response.DoneResponse{
-			User: result.User,
+			User:      result.User,
 			Certifier: result.Certifier,
-			Year: result.Year,
-			Status: result.Status,
-			Comment: result.Comment,
+			Year:      result.Year,
+			Status:    result.Status,
+			Comment:   result.Comment,
 		}
-		return insideEvents,outsideEvents,&dones,nil
+		return insideEvents, outsideEvents, &dones, nil
 	}
 
 }
-func (u *eventUsecase) SendEventThisYear(userID uint,year uint) ([]response.MyInside,[]response.MyOutside,error){
-	
-	inside,err:= u.eventRepo.AllEventInsideThisYear(userID,year)
+func (u *eventUsecase) SendEventThisYear(userID uint, year uint) ([]response.MyInside, []response.MyOutside, error) {
+
+	inside, err := u.eventRepo.AllEventInsideThisYear(userID, year)
 	if err != nil {
-		return nil,nil,err
+		return nil, nil, err
 	}
 	var insideEvents []response.MyInside
 	for _, event := range inside {
-		mappedEvent := response.MyInside{
-			EventID: event.EventId,
-			EventName: event.Event.EventName,
-			Location: event.Event.Location,
-			StartDate: utility.FormatToThaiDate(event.Event.StartDate),
-			StartTime: utility.FormatToThaiTime(event.Event.StartDate),
-			WorkingHour: event.Event.WorkingHour,
-			SchoolYear: event.Event.SchoolYear,
-			Status:event.Status,
-			Comment: event.Comment,
-			File: event.File,
+		if event.Status && event.File != "" {
+			mappedEvent := response.MyInside{
+				EventID:     event.EventId,
+				EventName:   event.Event.EventName,
+				Location:    event.Event.Location,
+				StartDate:   utility.FormatToThaiDate(event.Event.StartDate),
+				StartTime:   utility.FormatToThaiTime(event.Event.StartDate),
+				WorkingHour: event.Event.WorkingHour,
+				SchoolYear:  event.Event.SchoolYear,
+				Status:      event.Status,
+				Comment:     event.Comment,
+				File:        event.File,
+			}
+			insideEvents = append(insideEvents, mappedEvent)
 		}
-		insideEvents = append(insideEvents, mappedEvent)
 	}
-	outside,err:=u.eventRepo.AllEventOutsideThisYear(userID,year)
+
+	outside, err := u.eventRepo.AllEventOutsideThisYear(userID, year)
 	if err != nil {
-		return nil,nil, err
+		return nil, nil, err
 	}
 	var outsideEvents []response.MyOutside
 	for _, event := range outside {
-		mappedEvent := response.MyOutside{
-			EventID: event.EventID,
-			EventName: event.EventName,
-			Location: event.Location,
-			StartDate: utility.FormatToThaiDate(event.StartDate),
-			StartTime: utility.FormatToThaiTime(event.StartDate),
-			WorkingHour: event.WorkingHour,
-			SchoolYear: event.SchoolYear,
-			Intendant: event.Intendant,
-			File: event.File,
+		if event.File != "" {
+			mappedEvent := response.MyOutside{
+				EventID:     event.EventID,
+				EventName:   event.EventName,
+				Location:    event.Location,
+				StartDate:   utility.FormatToThaiDate(event.StartDate),
+				StartTime:   utility.FormatToThaiTime(event.StartDate),
+				WorkingHour: event.WorkingHour,
+				SchoolYear:  event.SchoolYear,
+				Intendant:   event.Intendant,
+				File:        event.File,
+			}
+			outsideEvents = append(outsideEvents, mappedEvent)
 		}
-		outsideEvents = append(outsideEvents, mappedEvent)
 	}
 	// dones ,err := u.userRepo.GetDone(userID,year)
-	return insideEvents,outsideEvents,nil
+	return insideEvents, outsideEvents, nil
 }
-// func (u *eventUsecase) SendEvent(userID uint) error{
 
-
-// }
 
 // Inside
 func checkPermission(permission *response.EventResponse, user *entity.Student) bool {
@@ -675,13 +651,6 @@ func (u *eventUsecase) UpdateEventStatusAndComment(eventID uint, userID uint, st
 	return u.eventRepo.UpdateEventStatusAndComment(eventID, userID, status, comment)
 }
 
-
-
-
-
-
-
-
 // func (u *eventUsecase) UpdateEventByID(eventID uint, claims map[string]interface{}, req request.EventRequest) error {
 // 	event, err := u.eventRepo.GetEventByID(eventID)
 // 	if err != nil {
@@ -729,7 +698,6 @@ func (u *eventUsecase) UpdateEventStatusAndComment(eventID uint, userID uint, st
 
 // 	return u.eventRepo.UpdateEventByID(event)
 // }
-
 
 // func (u *eventUsecase) DeleteEventByID(eventID uint, claims map[string]interface{}) error {
 // 	event, err := u.eventRepo.GetEventByID(eventID)

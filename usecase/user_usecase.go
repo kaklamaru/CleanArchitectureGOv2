@@ -29,8 +29,7 @@ type UserUsecase interface {
 	MarkNewsAsRead(newsID uint) error
 	GetNews(claims map[string]interface{}) ([]response.NewsResponse, error)
 
-	GetDoneFiltered(year uint, status bool, facultyID *uint) ([]response.ListResponse,error)
-
+	GetDoneFiltered(year uint, status bool, facultyID *uint) ([]response.ListResponse, error)
 }
 
 type userUsecase struct {
@@ -175,9 +174,19 @@ func (u *userUsecase) GetUserByClaims(claims map[string]interface{}) (interface{
 
 	switch role {
 	case "student":
-		return u.getStudentByUserID(userID)
+		result, err := u.getStudentByUserID(userID)
+		if err != nil {
+			return nil, err
+		}
+		result.Role = role
+		return result, nil
 	case "teacher", "admin":
-		return u.getTeacherByUserID(userID)
+		result, err := u.getTeacherByUserID(userID)
+		if err != nil {
+			return nil, err
+		}
+		result.Role = role
+		return result, nil
 	case "superadmin":
 		return map[string]interface{}{
 			"message": "welcome superadmin",
@@ -319,11 +328,11 @@ func (u *userUsecase) GetNews(claims map[string]interface{}) ([]response.NewsRes
 	var news []response.NewsResponse
 	for _, r := range result {
 		n := response.NewsResponse{
-			NewsID: r.NewsID,
-			Title: r.Title,
-			UserID: r.UserID,
+			NewsID:  r.NewsID,
+			Title:   r.Title,
+			UserID:  r.UserID,
 			Message: r.Message,
-			IsRead: r.IsRead,
+			IsRead:  r.IsRead,
 			// CreatedAt: r.CreatedAt,
 		}
 		news = append(news, n)
@@ -340,8 +349,8 @@ func (u *userUsecase) MarkNewsAsRead(newsID uint) error {
 	return nil
 }
 
-func (u *userUsecase) GetDoneFiltered(year uint, status bool, facultyID *uint) ([]response.ListResponse,error){
-	result,err:= u.userRepo.GetDoneFiltered(year,status,facultyID)
+func (u *userUsecase) GetDoneFiltered(year uint, status bool, facultyID *uint) ([]response.ListResponse, error) {
+	result, err := u.userRepo.GetDoneFiltered(year, status, facultyID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get: %v", err)
 	}

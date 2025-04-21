@@ -25,6 +25,8 @@ func deleteOldNews(db database.Database) {
 }
 
 func main() {
+	
+
 	cfg := config.LoadConfig()
 	db := database.SetupDatabase(cfg)
 
@@ -38,4 +40,6 @@ func main() {
 	if err := server.StartServer(); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
+
+
 }

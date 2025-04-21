@@ -5,3 +5,42 @@
 /uploads/
 
 
+# Binary files and outputs
+*.out
+*.exe
+*.test
+
+# Build directories
+/bin/
+/build/
+/dist/
+
+# Go modules and cache
+go.sum
+
+# Editor & OS junk
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Fly.io generated files
+.fly/
+fly.toml
+
+# Docker-related (optional)
+# .dockerignore
+
+# Environment files & secrets
+.env
+.env.*
+*.env
+secrets.*
+
+# Logs
+*.log
+
+# Database (local dev)
+*.db
+*.sqlite
+*.sqlite3

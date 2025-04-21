@@ -20,9 +20,6 @@ type EventRepository interface {
 	CountEventInside(eventID uint) (uint, error)
 	GetEventByID(id uint) (*entity.Event, error)
 	ToggleEventStatus(eventID uint) (bool, error)
-	// UpdateEventByID(event *entity.Event) error
-	// DeleteEventByID(eventID uint) error
-	// CreateEventWithTransaction(req *request.EventRequest, userID uint) error
 	UpdateEventWithTransaction(eventID, userID uint, req request.EventRequest) error
 	DeleteEventWithTransaction(eventID, userID uint) error
 
@@ -45,7 +42,12 @@ type EventRepository interface {
 	UploadFileOutside(eventID uint, userID uint, filePath string) error
 	AllEventOutsideThisYear(userID uint, year uint) ([]entity.EventOutside, error)
 	EventOutsideExists(eventID uint, userID uint) (bool, error)
+
 }
+// type InsideEvent struct{
+
+// }
+
 
 type eventRepository struct {
 	db *gorm.DB
@@ -114,7 +116,6 @@ func (r *eventRepository) UpdateEventWithTransaction(eventID, userID uint, req r
 		}
 	}
 
-	// Commit Transaction
 	return tx.Commit().Error
 }
 

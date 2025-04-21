@@ -10,6 +10,7 @@ import (
 func JWTMiddleware(jwt *jwt.JWTService) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
 		// ดึง token จาก Cookie
+		
 		tokenString := ctx.Cookies("token")
 		if tokenString == "" {
 			return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

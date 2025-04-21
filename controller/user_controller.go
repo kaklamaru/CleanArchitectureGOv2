@@ -81,9 +81,9 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		Name:     "token",                        // ชื่อคุกกี้
 		Value:    token,                          // ค่า JWT
 		Expires:  time.Now().Add(24 * time.Hour), // วันหมดอายุ (24 ชั่วโมง)
-		HTTPOnly: false,                          // ป้องกันการเข้าถึงผ่าน JavaScript
-		Secure:   false,                          // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
-		SameSite: "Lax",                          // นโยบาย SameSite
+		HTTPOnly: true,                           // ป้องกันการเข้าถึงผ่าน JavaScript
+		Secure:   true,                           // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
+		SameSite: "None",                         // นโยบาย SameSite
 	})
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
@@ -184,20 +184,20 @@ func (c *UserController) UpdateRoleByID(ctx *fiber.Ctx) error {
 	}
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":"bad request",
+			"error": "bad request",
 		})
 	}
-	if err:= c.userUsecase.UpdateRoleByID(req.UserID,req.Role);err != nil {
+	if err := c.userUsecase.UpdateRoleByID(req.UserID, req.Role); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":"Failed to update role",
+			"error": "Failed to update role",
 		})
 	}
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"massage":"role updated successfully",
+		"massage": "role updated successfully",
 	})
 }
 
-func (c *UserController) SendEvent(ctx *fiber.Ctx) error{
+func (c *UserController) SendEvent(ctx *fiber.Ctx) error {
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -213,7 +213,7 @@ func (c *UserController) SendEvent(ctx *fiber.Ctx) error{
 	}
 	year := uint(id)
 
-	if err := c.userUsecase.SendEvent(year,claims); err != nil {
+	if err := c.userUsecase.SendEvent(year, claims); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -223,7 +223,7 @@ func (c *UserController) SendEvent(ctx *fiber.Ctx) error{
 	})
 }
 
-func (c *UserController) GetStudentsAndYearsByCertifier(ctx *fiber.Ctx) error{
+func (c *UserController) GetStudentsAndYearsByCertifier(ctx *fiber.Ctx) error {
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -239,7 +239,6 @@ func (c *UserController) GetStudentsAndYearsByCertifier(ctx *fiber.Ctx) error{
 	return ctx.Status(fiber.StatusOK).JSON(allStudent)
 
 }
-
 
 func (c *UserController) UpdateStatusDones(ctx *fiber.Ctx) error {
 	var req struct {
@@ -267,7 +266,6 @@ func (c *UserController) UpdateStatusDones(ctx *fiber.Ctx) error {
 	}
 	certifierID := uint(userIDFloat)
 
-
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request payload",
@@ -279,14 +277,13 @@ func (c *UserController) UpdateStatusDones(ctx *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
-	
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Checking all event successfully",
 	})
 }
 
-func (c *UserController) GetNews(ctx *fiber.Ctx) error{
+func (c *UserController) GetNews(ctx *fiber.Ctx) error {
 	claims, err := utility.GetClaimsFromContext(ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
@@ -302,7 +299,7 @@ func (c *UserController) GetNews(ctx *fiber.Ctx) error{
 	return ctx.Status(fiber.StatusOK).JSON(news)
 }
 
-func (c *UserController) MarkNewsAsRead(ctx *fiber.Ctx) error{
+func (c *UserController) MarkNewsAsRead(ctx *fiber.Ctx) error {
 	idStr := ctx.Params("newsid")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -321,7 +318,6 @@ func (c *UserController) MarkNewsAsRead(ctx *fiber.Ctx) error{
 		"message": "update status read successfully",
 	})
 }
-
 
 func (c *UserController) GetDoneFiltered(ctx *fiber.Ctx) error {
 	// ดึง year (จำเป็นต้องมี)
@@ -371,4 +367,3 @@ func (c *UserController) GetDoneFiltered(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(lists)
 }
-
