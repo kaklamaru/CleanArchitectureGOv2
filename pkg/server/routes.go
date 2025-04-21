@@ -7,6 +7,7 @@ import (
 	"go-clean-arch/pkg/middleware"
 	"go-clean-arch/repository"
 	"go-clean-arch/usecase"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -31,6 +32,22 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	app.Post("/register/teacher", userContro.RegisterTeacher)
 	app.Post("/register/student", userContro.RegisterStudent)
 	app.Post("/login", userContro.Login)
+
+	app.Post("/logout", func(c *fiber.Ctx) error {
+		c.ClearCookie("token", "/")
+
+		c.Cookie(&fiber.Cookie{
+			Name:     "token",
+			Value:    "",
+			Path:     "/",
+			Domain: ".activitiesmanagement.online",
+			Expires:  time.Now().Add(-1 * time.Hour),
+			MaxAge:   -1,
+			Secure:   true,
+			HTTPOnly: true,
+		})
+		return c.SendStatus(fiber.StatusOK)
+	})
 
 	// middleware
 	protected := app.Group("/protected", middleware.JWTMiddleware(jwt))
@@ -100,17 +117,16 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	student.Put("/upload-outside/:id", eventContro.UploadFileOutside)
 	protected.Get("/file-outside/:eventid/:userid", eventContro.GetFileOutside)
 
-	student.Post("/send-event/:year",userContro.SendEvent)
+	student.Post("/send-event/:year", userContro.SendEvent)
 
-	teacher.Get("/superuser-check",userContro.GetStudentsAndYearsByCertifier)
-	
-	teacher.Get("/all-event/:userid/:year",eventContro.AllSendEventThisYear)
-	teacher.Put("/check-all-event/:userid",userContro.UpdateStatusDones)
+	teacher.Get("/superuser-check", userContro.GetStudentsAndYearsByCertifier)
 
-	protected.Get("/news",userContro.GetNews)
-	protected.Put("/news/:newsid",userContro.MarkNewsAsRead)
+	teacher.Get("/all-event/:userid/:year", eventContro.AllSendEventThisYear)
+	teacher.Put("/check-all-event/:userid", userContro.UpdateStatusDones)
+
+	protected.Get("/news", userContro.GetNews)
+	protected.Put("/news/:newsid", userContro.MarkNewsAsRead)
 
 	admin.Get("/done", userContro.GetDoneFiltered)
-
 
 }

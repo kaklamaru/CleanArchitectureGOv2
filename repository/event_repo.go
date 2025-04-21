@@ -393,7 +393,10 @@ func (r *eventRepository) GetFilePath(eventID uint, userID uint) (string, error)
 func (r *eventRepository) UploadFile(eventID uint, userID uint, filePath string) error {
 	if err := r.db.Model(&entity.EventInside{}).
 		Where("event_id = ? AND user = ?", eventID, userID).
-		Update("file", filePath).Error; err != nil {
+		Updates(map[string]interface{}{
+			"file":    filePath,
+			"comment": "",
+		}).Error; err != nil {
 		return err
 	}
 	return nil

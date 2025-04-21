@@ -77,8 +77,7 @@
 // 	}
 // 	return val
 // }
-// 
-
+//
 
 // package config
 
@@ -166,7 +165,6 @@
 // 	return val
 // }
 
-
 package config
 
 import (
@@ -174,7 +172,8 @@ import (
 	"os"
 	"strconv"
 
-	_ "github.com/lib/pq" 
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 // Config struct สำหรับการเก็บค่าคอนฟิก
@@ -190,6 +189,11 @@ type Config struct {
 
 // LoadConfig โหลดค่าคอนฟิกจาก environment variables
 func LoadConfig() *Config {
+	// 
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+	// 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
 		log.Fatal("DATABASE_URL is required but not set")

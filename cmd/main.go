@@ -26,7 +26,6 @@ func deleteOldNews(db database.Database) {
 
 func main() {
 	
-
 	cfg := config.LoadConfig()
 	db := database.SetupDatabase(cfg)
 

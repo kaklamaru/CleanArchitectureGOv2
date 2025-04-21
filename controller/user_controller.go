@@ -84,6 +84,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 		HTTPOnly: true,                           // ป้องกันการเข้าถึงผ่าน JavaScript
 		Secure:   true,                           // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
 		SameSite: "None",                         // นโยบาย SameSite
+		Domain: ".activitiesmanagement.online",
 	})
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
