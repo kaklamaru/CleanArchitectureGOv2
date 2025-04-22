@@ -272,6 +272,24 @@ func (r *userRepository) CreateDones(userID uint, year uint, superUserID uint) e
 		return r.db.Save(&done).Error
 	}
 
+	var existing entity.Student
+	if err := r.db.First(&existing, "user_id =? ", userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("student with ID %d not found", userID)
+		}
+		return err
+	}
+		// 4. สร้าง News โดยใช้ Certifier
+		news := entity.News{
+			Title:   "เอกสารที่ต้องตรวจสอบ",
+			UserID:  superUserID,
+			Message: fmt.Sprintf("มีเอกสารของ %s%s ที่คุณต้องตรวจสอบ.",existing.TitleName,existing.FirstName),
+		}
+	
+		if err := r.db.Create(&news).Error; err != nil {
+			return fmt.Errorf("failed to create news for superUser %d: %w", superUserID, err)
+		}
+
 	return fmt.Errorf("document for year %d already approved", year)
 }
 

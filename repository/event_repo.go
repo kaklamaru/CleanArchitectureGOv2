@@ -392,6 +392,7 @@ func (r *eventRepository) GetFilePath(eventID uint, userID uint) (string, error)
 }
 
 func (r *eventRepository) UploadFile(eventID uint, userID uint, filePath string) error {
+	// 1. อัปเดต File และล้าง Comment
 	if err := r.db.Model(&entity.EventInside{}).
 		Where(`event_id = ? AND "user" = ?`, eventID, userID).
 		Updates(map[string]interface{}{
@@ -400,8 +401,37 @@ func (r *eventRepository) UploadFile(eventID uint, userID uint, filePath string)
 		}).Error; err != nil {
 		return err
 	}
+
+	// 2. ดึง EventInside เพื่อใช้ Certifier
+	var inside entity.EventInside
+	if err := r.db.
+		Where(`event_id = ? AND "user" = ?`, eventID, userID).
+		First(&inside).Error; err != nil {
+		return err
+	}
+
+	// 3. ดึงข้อมูล Event เพื่อชื่อกิจกรรม
+	var event entity.Event
+	if err := r.db.
+		Where("event_id = ?", eventID).
+		First(&event).Error; err != nil {
+		return err
+	}
+
+	// 4. สร้าง News โดยใช้ Certifier
+	news := entity.News{
+		Title:   "กิจกรรมที่ต้องตรวจสอบ",
+		UserID:  inside.Certifier,
+		Message: fmt.Sprintf("กิจกรรม '%s' ที่คุณต้องตรวจสอบ.", event.EventName),
+	}
+
+	if err := r.db.Create(&news).Error; err != nil {
+		return fmt.Errorf("failed to create news for certifier %d: %w", inside.Certifier, err)
+	}
+
 	return nil
 }
+
 
 func (r *eventRepository) MyChecklist(userID uint, eventID uint) ([]entity.EventInside, error) {
 	var checklist []entity.EventInside
