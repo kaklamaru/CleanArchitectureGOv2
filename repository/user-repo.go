@@ -371,10 +371,33 @@ func (r *userRepository) UpdateStatusDones(certifierID uint, userID uint, status
 	if err := r.db.Model(&entity.Done{}).
 		Where(`certifier = ? AND "user" = ?`, certifierID, userID).
 		Updates(updates).Error; err != nil {
-		return fmt.Errorf("failed to update event: %w", err)
+		return fmt.Errorf("failed to update done status: %w", err)
 	}
+
+	// เตรียมข้อความข่าว
+	text := "ไม่ผ่าน"
+	if status {
+		text = "ผ่าน"
+	}
+
+	message := fmt.Sprintf("เอกสารของคุณถูกประเมินว่า '%s'", text)
+	if !status && comment != "" {
+		message += fmt.Sprintf(" เนื่องจาก: %s", comment)
+	}
+
+	news := entity.News{
+		Title:   "สถานะการตรวจประเมินเอกสาร",
+		UserID:  userID, // ผู้รับข่าว
+		Message: message,
+	}
+
+	if err := r.db.Create(&news).Error; err != nil {
+		return fmt.Errorf("failed to create news: %w", err)
+	}
+
 	return nil
 }
+
 
 func (r *userRepository) GetNews(userID uint) ([]entity.News, error) {
 	var newsList []entity.News

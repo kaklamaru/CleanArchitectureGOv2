@@ -34,7 +34,7 @@ type EventRepository interface {
 	MyChecklist(userID uint, eventID uint) ([]entity.EventInside, error)
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
 	AllEventInsideThisYear(userID uint, year uint) ([]entity.EventInside, error)
-	AllEventInside(userID uint) ([]entity.EventInside, error) 
+	AllEventInside(userID uint) ([]entity.EventInside, error)
 
 	CreateEventOutside(outside entity.EventOutside) error
 	DeleteEventOutsideByID(eventID uint) error
@@ -43,12 +43,11 @@ type EventRepository interface {
 	UploadFileOutside(eventID uint, userID uint, filePath string) error
 	AllEventOutsideThisYear(userID uint, year uint) ([]entity.EventOutside, error)
 	EventOutsideExists(eventID uint, userID uint) (bool, error)
-
 }
+
 // type InsideEvent struct{
 
 // }
-
 
 type eventRepository struct {
 	db *gorm.DB
@@ -275,7 +274,7 @@ func (r *eventRepository) JoinEvent(eventInside *entity.EventInside) error {
 	}()
 
 	// ตั้งค่า lock timeout เพื่อป้องกันการล็อกที่ยาวนาน
-	if err := tx.Exec("SET lock_timeout TO '5s'").Error;err!= nil {
+	if err := tx.Exec("SET lock_timeout TO '5s'").Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to set lock timeout: %w", err)
 	}
@@ -325,7 +324,7 @@ func (r *eventRepository) UnJoinEvent(eventID uint, userID uint) error {
 	}()
 
 	// ตั้งค่า lock timeout เพื่อป้องกันการรอค้างนานเกินไป
-	if err := tx.Exec("SET lock_timeout TO '5s'").Error;err!= nil {
+	if err := tx.Exec("SET lock_timeout TO '5s'").Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to set lock timeout: %w", err)
 	}
@@ -432,7 +431,6 @@ func (r *eventRepository) UploadFile(eventID uint, userID uint, filePath string)
 	return nil
 }
 
-
 func (r *eventRepository) MyChecklist(userID uint, eventID uint) ([]entity.EventInside, error) {
 	var checklist []entity.EventInside
 	if err := r.db.Preload("Event").Preload("Student.Branch.Faculty").Where("event_id = ? ", eventID).Find(&checklist).Error; err != nil {
@@ -451,6 +449,34 @@ func (r *eventRepository) UpdateEventStatusAndComment(eventID uint, userID uint,
 		Updates(updates).Error; err != nil {
 		return fmt.Errorf("failed to update event: %w", err)
 	}
+
+	var event entity.Event
+	if err := r.db.
+		Where("event_id = ?", eventID).
+		First(&event).Error; err != nil {
+		return err
+	}
+
+	text := "ไม่ผ่าน"
+	if status {
+		text = "ผ่าน"
+	}
+
+	message := fmt.Sprintf("เอกสารกิจกรรม '%s' '%s'", event.EventName, text)
+	if !status && comment != "" {
+		message += fmt.Sprintf(" เนื่องจาก: %s", comment)
+	}
+
+	news := entity.News{
+		Title:   fmt.Sprintf("เอกสารกิจกรรม '%s'", event.EventName),
+		UserID:  userID,
+		Message: message,
+	}
+
+	if err := r.db.Create(&news).Error; err != nil {
+		return fmt.Errorf("failed to create news: %w", err)
+	}
+
 	return nil
 }
 
@@ -568,8 +594,6 @@ func (r *eventRepository) EventOutsideExists(eventID uint, userID uint) (bool, e
 	}
 	return count > 0, nil
 }
-
-
 
 // ไม่ได้ใช้
 /*
