@@ -178,14 +178,14 @@ func (u *userUsecase) GetUserByClaims(claims map[string]interface{}) (interface{
 		if err != nil {
 			return nil, err
 		}
-		// result.Role = role
+		result.Role = role
 		return result, nil
 	case "teacher", "admin":
 		result, err := u.getTeacherByUserID(userID)
 		if err != nil {
 			return nil, err
 		}
-		// result.Role = role
+		result.Role = role
 		return result, nil
 	case "superadmin":
 		return map[string]interface{}{

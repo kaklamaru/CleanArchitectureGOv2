@@ -26,7 +26,7 @@ type TeacherResponse struct {
 	LastName  string `json:"last_name"`
 	Phone     string `json:"phone"`
 	Code      string `json:"code"`
-	// Role      string `json:"role"`
+	Role      string `json:"role"`
 	SuperUser bool   `json:"super_user"`
 }
 type TeacherByClaimsResponse struct {
@@ -36,7 +36,7 @@ type TeacherByClaimsResponse struct {
 	LastName  string `json:"last_name"`
 	Phone     string `json:"phone"`
 	Code      string `json:"code"`
-	// Role      string `json:"role"`
+	Role      string `json:"role"`
 	SuperUser bool `json:"super_user"`
 }
 
