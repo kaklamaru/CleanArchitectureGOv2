@@ -27,6 +27,7 @@ type EventUsecase interface {
 	AllAllowedEvent() ([]response.EventResponse, error)
 	AllCurrentEvent() ([]response.EventResponse, error)
 	MyEventThisYear(userID uint, year uint) ([]response.MyInside, []response.MyOutside, *response.DoneResponse, error)
+	MyEventInside(userID uint) ([]response.MyInside, error)
 	SendEventThisYear(userID uint, year uint) ([]response.MyInside, []response.MyOutside, error)
 
 	JoinEvent(eventID uint, claims map[string]interface{}) error
@@ -103,7 +104,6 @@ func mapEventResponse(event entity.Event, count uint) (*response.EventResponse, 
 		},
 	}, nil
 }
-
 
 func (u *eventUsecase) validateBranches(branches []uint) error {
 	for _, branchID := range branches {
@@ -408,6 +408,34 @@ func (u *eventUsecase) MyEventThisYear(userID uint, year uint) ([]response.MyIns
 	}
 
 }
+
+func (u *eventUsecase) MyEventInside(userID uint) ([]response.MyInside, error) {
+
+	inside, err := u.eventRepo.AllEventInside(userID)
+	if err != nil {
+		return nil, err
+	}
+	var insideEvents []response.MyInside
+	for _, event := range inside {
+		mappedEvent := response.MyInside{
+			EventID:     event.EventId,
+			EventName:   event.Event.EventName,
+			Location:    event.Event.Location,
+			StartDate:   utility.FormatToThaiDate(event.Event.StartDate),
+			StartTime:   utility.FormatToThaiTime(event.Event.StartDate),
+			WorkingHour: event.Event.WorkingHour,
+			SchoolYear:  event.Event.SchoolYear,
+			Status:      event.Status,
+			Comment:     event.Comment,
+			File:        event.File,
+		}
+		insideEvents = append(insideEvents, mappedEvent)
+	}
+
+	return insideEvents, nil
+
+}
+
 func (u *eventUsecase) SendEventThisYear(userID uint, year uint) ([]response.MyInside, []response.MyOutside, error) {
 
 	inside, err := u.eventRepo.AllEventInsideThisYear(userID, year)
@@ -457,7 +485,6 @@ func (u *eventUsecase) SendEventThisYear(userID uint, year uint) ([]response.MyI
 	// dones ,err := u.userRepo.GetDone(userID,year)
 	return insideEvents, outsideEvents, nil
 }
-
 
 // Inside
 func checkPermission(permission *response.EventResponse, user *entity.Student) bool {

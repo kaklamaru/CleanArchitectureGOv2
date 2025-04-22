@@ -238,6 +238,31 @@ func (c *EventController) MyEventThisYear(ctx *fiber.Ctx) error {
 	})
 }
 
+func (c *EventController) MyEventInside(ctx *fiber.Ctx) error {
+	claims, err := utility.GetClaimsFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		return fmt.Errorf("invalid user_id in claims")
+	}
+	userID := uint(userIDFloat)
+
+	insideEvents,err := c.eventUsecase.MyEventInside(userID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"inside_events":  insideEvents,
+	})
+}
+
+
 func (c *EventController) AllSendEventThisYear(ctx *fiber.Ctx) error {
 	yearStr := ctx.Params("year")
 	yearInt, err := strconv.Atoi(yearStr)

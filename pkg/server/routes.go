@@ -101,6 +101,9 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	teacher.Delete("/event/:id", eventContro.DeleteEventByID)
 	teacher.Put("/event/:id", eventContro.UpdateEventByID)
 	student.Get("myevents/:year", eventContro.MyEventThisYear)
+	student.Get("myevents", eventContro.MyEventInside)
+	
+
 
 	// inside
 	student.Post("/joinevent/:id", eventContro.JoinEvent)

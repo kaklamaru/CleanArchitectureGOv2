@@ -34,6 +34,7 @@ type EventRepository interface {
 	MyChecklist(userID uint, eventID uint) ([]entity.EventInside, error)
 	UpdateEventStatusAndComment(eventID uint, userID uint, status bool, comment string) error
 	AllEventInsideThisYear(userID uint, year uint) ([]entity.EventInside, error)
+	AllEventInside(userID uint) ([]entity.EventInside, error) 
 
 	CreateEventOutside(outside entity.EventOutside) error
 	DeleteEventOutsideByID(eventID uint) error
@@ -429,6 +430,17 @@ func (r *eventRepository) AllEventInsideThisYear(userID uint, year uint) ([]enti
 	err := r.db.Preload("Event").Joins("JOIN events ON events.event_id = event_insides.event_id").
 		Where("event_insides.user = ?", userID).
 		Where("events.school_year = ?", year).
+		Find(&eventInsides).Error
+	if err != nil {
+		fmt.Println("Error fetching data:", err)
+	}
+	return eventInsides, nil
+}
+
+func (r *eventRepository) AllEventInside(userID uint) ([]entity.EventInside, error) {
+	var eventInsides []entity.EventInside
+	err := r.db.Preload("Event").Joins("JOIN events ON events.event_id = event_insides.event_id").
+		Where("event_insides.user = ?", userID).
 		Find(&eventInsides).Error
 	if err != nil {
 		fmt.Println("Error fetching data:", err)
