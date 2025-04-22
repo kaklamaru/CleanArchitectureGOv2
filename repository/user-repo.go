@@ -282,7 +282,7 @@ func (r *userRepository) GetTotalWorkingHours(userID uint, year uint) (uint, uin
 	// รวมชั่วโมงจาก EventOutside
 	err := r.db.Model(&entity.EventOutside{}).
 		Select("COALESCE(SUM(working_hour), 0)").
-		Where("user = ?", userID).
+		Where(`"user" = ?`, userID).
 		Where("school_year = ?", year).
 		Scan(&eventOutsideHours).Error
 	if err != nil {
