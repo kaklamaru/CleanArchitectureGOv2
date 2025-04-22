@@ -252,7 +252,7 @@ func (r *userRepository) GetSuperUserForStudent(userID uint) (*uint, error) {
 func (r *userRepository) CreateDones(userID uint, year uint, superUserID uint) error {
 	var done entity.Done
 
-	err := r.db.Where("user = ? AND year = ?", userID, year).First(&done).Error
+	err := r.db.Where(`"user" = ? AND year = ?`, userID, year).First(&done).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			newDone := entity.Done{
@@ -351,7 +351,7 @@ func (r *userRepository) UpdateStatusDones(certifierID uint, userID uint, status
 		"comment": comment,
 	}
 	if err := r.db.Model(&entity.Done{}).
-		Where("certifier = ? AND user = ?", certifierID, userID).
+		Where(`certifier = ? AND "user" = ?`, certifierID, userID).
 		Updates(updates).Error; err != nil {
 		return fmt.Errorf("failed to update event: %w", err)
 	}

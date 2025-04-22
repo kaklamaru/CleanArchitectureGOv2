@@ -341,7 +341,7 @@ func (r *eventRepository) UnJoinEvent(eventID uint, userID uint) error {
 
 	// ตรวจสอบว่าผู้ใช้เคยเข้าร่วมจริงหรือไม่
 	var eventInside entity.EventInside
-	if err := tx.Where("event_id = ? AND user = ?", eventID, userID).
+	if err := tx.Where(`event_id = ? AND "user" = ?`, eventID, userID).
 		First(&eventInside).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("user has not joined this event")
@@ -378,7 +378,7 @@ func (r *eventRepository) GetFilePath(eventID uint, userID uint) (string, error)
 	var filePath string
 
 	err := r.db.Model(&entity.EventInside{}).
-		Where("event_id = ? AND user = ?", eventID, userID).
+		Where(`event_id = ? AND "user" = ?`, eventID, userID).
 		Pluck("file", &filePath).Error
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve file path: %w", err)
@@ -393,7 +393,7 @@ func (r *eventRepository) GetFilePath(eventID uint, userID uint) (string, error)
 
 func (r *eventRepository) UploadFile(eventID uint, userID uint, filePath string) error {
 	if err := r.db.Model(&entity.EventInside{}).
-		Where("event_id = ? AND user = ?", eventID, userID).
+		Where(`event_id = ? AND "user" = ?`, eventID, userID).
 		Updates(map[string]interface{}{
 			"file":    filePath,
 			"comment": "",
@@ -417,7 +417,7 @@ func (r *eventRepository) UpdateEventStatusAndComment(eventID uint, userID uint,
 		"comment": comment,
 	}
 	if err := r.db.Model(&entity.EventInside{}).
-		Where("event_id = ? AND user = ?", eventID, userID).
+		Where(`event_id = ? AND "user" = ?`, eventID, userID).
 		Updates(updates).Error; err != nil {
 		return fmt.Errorf("failed to update event: %w", err)
 	}
@@ -507,7 +507,7 @@ func (r *eventRepository) GetFilePathOutside(eventID uint, userID uint) (string,
 	var filePath string
 
 	err := r.db.Model(&entity.EventOutside{}).
-		Where("event_id = ? AND user = ?", eventID, userID).
+		Where(`event_id = ? AND "user" = ?`, eventID, userID).
 		Pluck("file", &filePath).Error
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve file path: %w", err)
@@ -522,7 +522,7 @@ func (r *eventRepository) GetFilePathOutside(eventID uint, userID uint) (string,
 
 func (r *eventRepository) UploadFileOutside(eventID uint, userID uint, filePath string) error {
 	if err := r.db.Model(&entity.EventOutside{}).
-		Where("event_id = ? AND user = ?", eventID, userID).
+		Where(`event_id = ? AND "user" = ?`, eventID, userID).
 		Update("file", filePath).Error; err != nil {
 		return err
 	}
@@ -531,7 +531,7 @@ func (r *eventRepository) UploadFileOutside(eventID uint, userID uint, filePath 
 func (r *eventRepository) EventOutsideExists(eventID uint, userID uint) (bool, error) {
 	var count int64
 	err := r.db.Model(&entity.EventOutside{}).
-		Where("event_id = ? AND user = ?", eventID, userID).
+		Where(`event_id = ? AND "user" = ?`, eventID, userID).
 		Count(&count).Error
 	if err != nil {
 		return false, fmt.Errorf("failed to check event outside existence: %w", err)
