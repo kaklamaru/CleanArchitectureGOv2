@@ -5,6 +5,7 @@ import (
 	"go-clean-arch/pkg/utility"
 	"go-clean-arch/structure/request"
 	"go-clean-arch/usecase"
+	"os"
 	"strconv"
 	"time"
 
@@ -76,16 +77,37 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+	isDev := os.Getenv("ON") == "development"
 
-	ctx.Cookie(&fiber.Cookie{
-		Name:     "token",                        // ชื่อคุกกี้
-		Value:    token,                          // ค่า JWT
-		Expires:  time.Now().Add(24 * time.Hour), // วันหมดอายุ (24 ชั่วโมง)
-		HTTPOnly: true,                           // ป้องกันการเข้าถึงผ่าน JavaScript
-		Secure:   true,                           // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
-		SameSite: "None",                         // นโยบาย SameSite
-		Domain: ".activitiesmanagement.online",
-	})
+    ctx.Cookie(&fiber.Cookie{
+        Name:     "token",
+        Value:    token,
+        Expires:  time.Now().Add(24 * time.Hour),
+        HTTPOnly: true,
+        Secure:   !isDev, // Localhost ต้องเป็น false
+        SameSite: func() string {
+            if isDev {
+                return "Lax" // ปลอดภัยพอ และใช้ได้กับ localhost
+            }
+            return "None" // สำหรับ production ที่ใช้ Secure
+        }(),
+        Domain: func() string {
+            if isDev {
+                return "localhost"
+            }
+            return ".activitiesmanagement.online"
+        }(),
+    })
+	
+	// ctx.Cookie(&fiber.Cookie{
+	// 	Name:     "token",                        // ชื่อคุกกี้
+	// 	Value:    token,                          // ค่า JWT
+	// 	Expires:  time.Now().Add(24 * time.Hour), // วันหมดอายุ (24 ชั่วโมง)
+	// 	HTTPOnly: true,                           // ป้องกันการเข้าถึงผ่าน JavaScript
+	// 	Secure:   true,                           // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
+	// 	SameSite: "None",                         // นโยบาย SameSite
+	// 	Domain: ".activitiesmanagement.online",
+	// })
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",
