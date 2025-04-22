@@ -275,7 +275,7 @@ func (r *eventRepository) JoinEvent(eventInside *entity.EventInside) error {
 	}()
 
 	// ตั้งค่า lock timeout เพื่อป้องกันการล็อกที่ยาวนาน
-	if err := tx.Exec("SET innodb_lock_wait_timeout = 5").Error; err != nil {
+	if err := tx.Exec("SET lock_timeout TO '5s'").Error;err!= nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to set lock timeout: %w", err)
 	}
@@ -325,7 +325,7 @@ func (r *eventRepository) UnJoinEvent(eventID uint, userID uint) error {
 	}()
 
 	// ตั้งค่า lock timeout เพื่อป้องกันการรอค้างนานเกินไป
-	if err := tx.Exec("SET innodb_lock_wait_timeout = 5").Error; err != nil {
+	if err := tx.Exec("SET lock_timeout TO '5s'").Error;err!= nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to set lock timeout: %w", err)
 	}
