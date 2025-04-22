@@ -497,7 +497,7 @@ func (r *eventRepository) GetEventOutsideByID(id uint) (*entity.EventOutside, er
 
 func (r *eventRepository) AllEventOutsideThisYear(userID uint, year uint) ([]entity.EventOutside, error) {
 	var eventOutside []entity.EventOutside
-	if err := r.db.Where("user = ? AND school_year = ?", userID, year).Find(&eventOutside).Error; err != nil {
+	if err := r.db.Where(`"user" = ? AND school_year = ?`, userID, year).Find(&eventOutside).Error; err != nil {
 		return nil, err
 	}
 	return eventOutside, nil
