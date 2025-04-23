@@ -120,8 +120,23 @@ func (r *eventRepository) UpdateEventWithTransaction(eventID, userID uint, req r
 }
 
 func (r *eventRepository) CreateEvent(event *entity.Event) error {
+	// ตรวจสอบว่ามีกิจกรรมที่ชื่อเดียวกัน วันที่เดียวกัน และ creator เดียวกันอยู่แล้วหรือไม่
+	var existingEvent entity.Event
+	err := r.db.Where("event_name = ? AND start_date = ? AND creator = ?", event.EventName, event.StartDate, event.Creator).
+		First(&existingEvent).Error
+
+	if err == nil {
+		// พบกิจกรรมที่ซ้ำกัน
+		return fmt.Errorf("event with same name and start date already exists for this creator")
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	// ถ้าไม่เจอซ้ำ สร้าง event ได้
 	return r.db.Create(event).Error
 }
+
 
 func (r *eventRepository) NewsForUser(news *entity.News) error {
 	if err := r.db.Create(news).Error; err != nil {
