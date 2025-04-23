@@ -132,11 +132,22 @@ func (r *eventRepository) NewsForUser(news *entity.News) error {
 
 func (r *eventRepository) GetAllEvent() ([]entity.Event, error) {
 	var events []entity.Event
-	if err := r.db.Preload("Teacher").Find(&events).Error; err != nil {
+
+	// คำนวณช่วงเวลา -30 วัน ถึง +30 วัน
+	now := time.Now()
+	start := now.AddDate(0, 0, -30)
+	end := now.AddDate(0, 0, 30)
+
+	// Query เฉพาะกิจกรรมที่ start_date อยู่ในช่วงที่กำหนด
+	if err := r.db.Preload("Teacher").
+		Where("start_date BETWEEN ? AND ?", start, end).
+		Find(&events).Error; err != nil {
 		return nil, err
 	}
+
 	return events, nil
 }
+
 
 func (r *eventRepository) CountEventInside(eventID uint) (uint, error) {
 	var count int64
@@ -296,6 +307,9 @@ func (r *eventRepository) JoinEvent(eventInside *entity.EventInside) error {
 
 	// ลดจำนวนที่ว่างลง 1
 	event.FreeSpace -= 1
+	if event.FreeSpace == 0 {
+		event.Status = false
+	}
 	if err := tx.Save(&event).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to update event free space: %w", err)
@@ -360,6 +374,9 @@ func (r *eventRepository) UnJoinEvent(eventID uint, userID uint) error {
 
 	// เพิ่มจำนวน FreeSpace
 	event.FreeSpace += 1
+	if event.FreeSpace > 0 {
+		event.Status = true
+	}
 	if err := tx.Save(&event).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to update event free space: %w", err)

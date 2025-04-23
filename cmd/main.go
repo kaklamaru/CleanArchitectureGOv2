@@ -23,6 +23,25 @@ func deleteOldNews(db database.Database) {
 		time.Sleep(24 * time.Hour)
 	}
 }
+func updatePastEventStatus(db database.Database) {
+	for {
+		// ตั้งค่า timezone ให้ตรงกับเขตเวลาในประเทศไทย
+		db.GetDB().Exec("SET time_zone = '+07:00'")
+
+		// อัปเดต status ของ event ที่ start_date < ปัจจุบัน
+		result := db.GetDB().Exec("UPDATE `events` SET status = false WHERE start_date < NOW() AND status = true")
+		if result.Error != nil {
+			log.Printf("Error updating event statuses: %v", result.Error)
+		} else {
+			log.Printf("Updated %d event(s) to status=false (past start date).", result.RowsAffected)
+		}
+
+		// รอ 24 ชั่วโมงก่อนทำงานอีกครั้ง
+		time.Sleep(1 * time.Minute)
+	}
+}
+
+
 
 func main() {
 	
@@ -31,6 +50,7 @@ func main() {
 
 	jwt := jwt.NewJWTService(cfg)
 	go deleteOldNews(db)
+	go updatePastEventStatus(db)
 	server,err := server.NewServer(cfg,db,jwt)
 	if err != nil {
 		log.Fatalf("Error creating server: %v", err)
