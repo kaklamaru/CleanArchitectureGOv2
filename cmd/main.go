@@ -29,7 +29,7 @@ func updatePastEventStatus(db database.Database) {
 		db.GetDB().Exec("SET time_zone = '+07:00'")
 
 		// อัปเดต status ของ event ที่ start_date < ปัจจุบัน
-		result := db.GetDB().Exec("UPDATE `events` SET status = false WHERE start_date < NOW() AND status = true")
+		result := db.GetDB().Exec("UPDATE events SET status = false WHERE start_date < NOW() AND status = true")
 		
 		if result.Error != nil {
 			log.Printf("Error updating event statuses: %v", result.Error)
