@@ -611,3 +611,23 @@ func (c *EventController) GetFileOutside(ctx *fiber.Ctx) error {
 	return ctx.SendFile(filePath, false)
 
 }
+
+func (c *EventController) DashboardData(ctx *fiber.Ctx) error{
+	idStr := ctx.Params("year")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid id format",
+		})
+	}
+	year := uint(id)
+	data, err := c.eventUsecase.DashboardData(year)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": data,
+	})
+}

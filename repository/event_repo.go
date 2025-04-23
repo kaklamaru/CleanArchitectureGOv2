@@ -6,6 +6,7 @@ import (
 	"go-clean-arch/pkg/utility"
 	"go-clean-arch/structure/entity"
 	"go-clean-arch/structure/request"
+	"go-clean-arch/structure/response"
 	"os"
 	"time"
 
@@ -43,6 +44,8 @@ type EventRepository interface {
 	UploadFileOutside(eventID uint, userID uint, filePath string) error
 	AllEventOutsideThisYear(userID uint, year uint) ([]entity.EventOutside, error)
 	EventOutsideExists(eventID uint, userID uint) (bool, error)
+
+	DashboardData(year uint) (*response.DashboardSummary, error)
 }
 
 // type InsideEvent struct{
@@ -137,7 +140,6 @@ func (r *eventRepository) CreateEvent(event *entity.Event) error {
 	return r.db.Create(event).Error
 }
 
-
 func (r *eventRepository) NewsForUser(news *entity.News) error {
 	if err := r.db.Create(news).Error; err != nil {
 		return err
@@ -162,7 +164,6 @@ func (r *eventRepository) GetAllEvent() ([]entity.Event, error) {
 
 	return events, nil
 }
-
 
 func (r *eventRepository) CountEventInside(eventID uint) (uint, error) {
 	var count int64
@@ -627,39 +628,32 @@ func (r *eventRepository) EventOutsideExists(eventID uint, userID uint) (bool, e
 	return count > 0, nil
 }
 
-// ไม่ได้ใช้
-/*
-func (r *eventRepository) UpdateEventByID(event *entity.Event) error {
-	if err := r.db.Model(&entity.Event{}).
-		Where("event_id = ?", event.EventID).
-		Updates(entity.Event{
-			EventName:   event.EventName,
-			Detail:      event.Detail,
-			Location:    event.Location,
-			StartDate:   event.StartDate,
-			WorkingHour: event.WorkingHour,
-			Status:      event.Status,
-		}).Error; err != nil {
-		return fmt.Errorf("failed to update event: %w", err)
+func (r *eventRepository) DashboardData(year uint) (*response.DashboardSummary, error) {
+	var data response.DashboardSummary
+
+	var countStd, countDone, countEvent, countEventAllow int64
+
+	if err := r.db.Model(&entity.Student{}).Count(&countStd).Error; err != nil {
+		return nil, err
 	}
-	return nil
+	if err := r.db.Model(&entity.Done{}).Where("year = ? AND status = ?", year, true).Count(&countDone).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.Model(&entity.Event{}).Where("school_year = ?", year).Count(&countEvent).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.Model(&entity.Event{}).Where("school_year = ? AND status = ?", year, true).Count(&countEventAllow).Error; err != nil {
+		return nil, err
+	}
+
+	// แปลงค่าจาก int64 -> uint
+	data.CountStd = uint(countStd)
+	data.CountDone = uint(countDone)
+	data.CountEvent = uint(countEvent)
+	data.CountEventAllow = uint(countEventAllow)
+
+	return &data, nil
 }
 
-func (r *eventRepository) DeleteEventByID(eventID uint) error {
-	var event entity.Event
-	if err := r.db.Select("status").Where("event_id = ?", eventID).First(&event).Error; err != nil {
-		return fmt.Errorf("event not found: %w", err)
-	}
 
-	if event.Status {
-		return fmt.Errorf("cannot delete event because status is true")
-	}
 
-	if err := r.db.Where("event_id = ?", eventID).Delete(&entity.Event{}).Error; err != nil {
-		return fmt.Errorf("failed to delete event: %w", err)
-	}
-
-	return nil
-}
-
-*/

@@ -162,3 +162,10 @@ type ListResponse struct{
 	Status    bool    `json:"status"`
 	Comment   string  `json:"comment"`
 }
+
+type DashboardSummary struct {
+	CountStd         uint `json:"count_std"`
+	CountDone        uint `json:"count_done"`
+	CountEvent       uint `json:"count_event"`
+	CountEventAllow  uint `json:"count_eventallow"`
+}
