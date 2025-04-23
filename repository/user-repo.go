@@ -342,13 +342,6 @@ func (r *userRepository) GetStudentsAndYearsByCertifier(certifierID uint) ([]res
 	return result, nil
 }
 
-// func (r *userRepository) GetDone(userID uint,year uint) (*entity.Done,error){
-// 	var dones entity.Done
-// 	if err := r.db.Where("user=? AND year=?",userID,year).Find(&dones).Error; err != nil {
-// 		return nil, fmt.Errorf("repository: failed to retrieve dones: %w", err)
-// 	}
-// 	return &dones, nil
-// }
 
 func (r *userRepository) GetDone(userID uint, year uint) (*entity.Done, error) {
 	var done entity.Done

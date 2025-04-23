@@ -133,4 +133,7 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	admin.Get("/done", userContro.GetDoneFiltered)
 
 	admin.Get("/dashboard/:year",eventContro.DashboardData)
+	admin.Get("/event-7day",eventContro.GetUpcomingEventsWithin7Days)
+
+	
 }

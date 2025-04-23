@@ -46,6 +46,8 @@ type EventRepository interface {
 	EventOutsideExists(eventID uint, userID uint) (bool, error)
 
 	DashboardData(year uint) (*response.DashboardSummary, error)
+	GetUpcomingEventsWithin7Days() ([]entity.Event, error)
+	GetMonthlyEventStats(year uint) (eventCounts, outsideCounts []response.MonthlyEventCount, err error) 
 }
 
 // type InsideEvent struct{
@@ -655,5 +657,41 @@ func (r *eventRepository) DashboardData(year uint) (*response.DashboardSummary, 
 	return &data, nil
 }
 
+func (r *eventRepository) GetUpcomingEventsWithin7Days() ([]entity.Event, error) {
+	var events []entity.Event
 
+	today := time.Now()
+	sevenDaysLater := today.AddDate(0, 0, 6)
 
+	if err := r.db.Where("start_date BETWEEN ? AND ?", today, sevenDaysLater).Find(&events).Error; err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
+func (r *eventRepository) GetMonthlyEventStats(year uint) (eventCounts, outsideCounts []response.MonthlyEventCount, err error) {
+	// นับจาก Event
+	if err := r.db.
+		Model(&entity.Event{}).
+		Select("EXTRACT(MONTH FROM start_date) AS month, COUNT(*) AS count").
+		Where("school_year = ?", year).
+		Group("month").
+		Order("month").
+		Scan(&eventCounts).Error; err != nil {
+		return nil, nil, err
+	}
+
+	// นับจาก EventOutside
+	if err := r.db.
+		Model(&entity.EventOutside{}).
+		Select("EXTRACT(MONTH FROM start_date) AS month, COUNT(*) AS count").
+		Where("school_year = ?", year).
+		Group("month").
+		Order("month").
+		Scan(&outsideCounts).Error; err != nil {
+		return nil, nil, err
+	}
+
+	return eventCounts, outsideCounts, nil
+}

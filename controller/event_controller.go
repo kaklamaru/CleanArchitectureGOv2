@@ -627,7 +627,29 @@ func (c *EventController) DashboardData(ctx *fiber.Ctx) error{
 			"error": err.Error(),
 		})
 	}
+	inside , outside , err:= c.eventUsecase.GetMonthlyEventStats(year)
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message": data,
+		"all_count": data,
+		"inside_counts":inside,
+		"outside_counts": outside,
+	})
+}
+
+func (c *EventController)  GetUpcomingEventsWithin7Days(ctx *fiber.Ctx) error{
+	event7day,err:= c.eventUsecase.GetUpcomingEventsWithin7Days()
+	if err != nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"event_7day": event7day,
 	})
 }

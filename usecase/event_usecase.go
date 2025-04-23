@@ -45,6 +45,8 @@ type EventUsecase interface {
 	UploadFileOutside(eventID uint, claims map[string]interface{}, file *multipart.FileHeader) error
 
 	DashboardData(year uint) (*response.DashboardSummary, error)
+	GetMonthlyEventStats(year uint) (eventCounts, outsideCounts []response.MonthlyEventCount, err error)
+	GetUpcomingEventsWithin7Days() ([]response.EventResponse, error)
 }
 
 type eventUsecase struct {
@@ -683,4 +685,30 @@ func (u *eventUsecase) UpdateEventStatusAndComment(eventID uint, userID uint, st
 
 func (u *eventUsecase) DashboardData(year uint) (*response.DashboardSummary, error){
 	return u.eventRepo.DashboardData(year)
+}
+
+func (u *eventUsecase) GetMonthlyEventStats(year uint) (eventCounts, outsideCounts []response.MonthlyEventCount, err error){
+	return u.eventRepo.GetMonthlyEventStats(year)
+}
+
+
+func (u *eventUsecase) GetUpcomingEventsWithin7Days() ([]response.EventResponse, error){
+	events ,err := u.eventRepo.GetUpcomingEventsWithin7Days()
+	if err != nil {
+		return nil, err
+	} 
+
+	var res []response.EventResponse
+	for _, event := range events {
+		count, err := u.eventRepo.CountEventInside(event.EventID)
+		if err != nil {
+			return nil, err
+		}
+		mappedEvent, err := mapEventResponse(event, count)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, *mappedEvent)
+	}
+	return res, nil
 }

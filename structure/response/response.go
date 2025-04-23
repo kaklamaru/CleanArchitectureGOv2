@@ -169,3 +169,7 @@ type DashboardSummary struct {
 	CountEvent       uint `json:"count_event"`
 	CountEventAllow  uint `json:"count_eventallow"`
 }
+type MonthlyEventCount struct {
+	Month int  `json:"month"`
+	Count int64 `json:"count"`
+}
