@@ -40,7 +40,7 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 			Name:     "token",
 			Value:    "",
 			Path:     "/",
-			Domain: ".activitiesmanagement.online",
+			Domain: ".activitiesmanagement.online,http://localhost:3000",
 			Expires:  time.Now().Add(-1 * time.Hour),
 			MaxAge:   -1,
 			Secure:   true,

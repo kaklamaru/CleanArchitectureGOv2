@@ -30,6 +30,7 @@ func updatePastEventStatus(db database.Database) {
 
 		// อัปเดต status ของ event ที่ start_date < ปัจจุบัน
 		result := db.GetDB().Exec("UPDATE `events` SET status = false WHERE start_date < NOW() AND status = true")
+		
 		if result.Error != nil {
 			log.Printf("Error updating event statuses: %v", result.Error)
 		} else {
@@ -37,7 +38,7 @@ func updatePastEventStatus(db database.Database) {
 		}
 
 		// รอ 24 ชั่วโมงก่อนทำงานอีกครั้ง
-		time.Sleep(1 * time.Minute)
+		time.Sleep(12 * time.Hour)
 	}
 }
 
