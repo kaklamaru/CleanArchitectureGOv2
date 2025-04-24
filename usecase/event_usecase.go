@@ -618,8 +618,13 @@ func (u *eventUsecase) UploadFile(eventID uint, claims map[string]interface{}, f
 
 	// ถ้ามีไฟล์เดิมให้ลบ
 	if currentFilePath != "" {
-		if removeErr := os.Remove(currentFilePath); removeErr != nil {
-			return fmt.Errorf("failed to remove old file: %v", removeErr)
+		if _, err := os.Stat(currentFilePath); err == nil {
+			if removeErr := os.Remove(currentFilePath); removeErr != nil {
+				return fmt.Errorf("failed to remove old file: %v", removeErr)
+			}
+		} else if !os.IsNotExist(err) {
+			// มี error แต่ไม่ใช่เพราะไฟล์หาย
+			return fmt.Errorf("failed to check old file: %v", err)
 		}
 	}
 

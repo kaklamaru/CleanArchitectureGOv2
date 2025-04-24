@@ -8,6 +8,7 @@ import (
 	"go-clean-arch/structure/request"
 	"go-clean-arch/structure/response"
 	"os"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -47,7 +48,7 @@ type EventRepository interface {
 
 	DashboardData(year uint) (*response.DashboardSummary, error)
 	GetUpcomingEventsWithin7Days() ([]entity.Event, error)
-	GetMonthlyEventStats(year uint) (eventCounts, outsideCounts []response.MonthlyEventCount, err error) 
+	GetMonthlyEventStats(year uint) (eventCounts, outsideCounts []response.MonthlyEventCount, err error)
 }
 
 // type InsideEvent struct{
@@ -230,6 +231,33 @@ func (r *eventRepository) DeleteEventWithTransaction(eventID, userID uint) error
 		tx.Rollback()
 		return fmt.Errorf("failed to get users for event: %w", err)
 	}
+
+	// 2. ดึง filepath
+	var filePaths []string
+	if err := tx.Model(&entity.EventInside{}).
+		Where("event_id = ?", eventID).
+		Pluck("file_path", &filePaths).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to get file paths: %w", err)
+	}
+
+	// 3. ลบไฟล์ในระบบ
+	for _, path := range filePaths {
+		if path != "" {
+			// แปลง path dev เช่น "/app/uploads/..." -> "./uploads/..."
+			if strings.HasPrefix(path, "/app") {
+				path = "." + strings.TrimPrefix(path, "/app")
+			}
+			if _, err := os.Stat(path); err == nil {
+				if err := os.Remove(path); err != nil {
+					tx.Rollback()
+					return fmt.Errorf("failed to delete file '%s': %w", path, err)
+				}
+			}
+			// ถ้า os.IsNotExist(err) — ไม่ต้องทำอะไร ปล่อยผ่านได้
+		}
+	}
+
 
 	// ลบกิจกรรม
 	if err := tx.Where("event_id = ?", eventID).Delete(&entity.Event{}).Error; err != nil {

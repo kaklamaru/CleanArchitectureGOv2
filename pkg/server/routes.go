@@ -7,6 +7,8 @@ import (
 	"go-clean-arch/pkg/middleware"
 	"go-clean-arch/repository"
 	"go-clean-arch/usecase"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -135,5 +137,28 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	admin.Get("/dashboard/:year",eventContro.DashboardData)
 	admin.Get("/event-7day",eventContro.GetUpcomingEventsWithin7Days)
 
+	app.Get("/devfile",func(ctx *fiber.Ctx) error {
+		// ดึง path มาจาก query param
+		filePath := ctx.Query("path")
+		if filePath == "" {
+			return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "missing 'path' parameter",
+			})
+		}
 	
+		// แปลง path dev จาก "/app/uploads/..." เป็น "./uploads/..."
+		// (ถ้าระบบจริงเก็บใน local folder แบบ relative)
+		if strings.HasPrefix(filePath, "/app") {
+			filePath = "." + strings.TrimPrefix(filePath, "/app")
+		}
+	
+		// ตรวจสอบว่าไฟล์มีอยู่จริงไหม
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "file not found",
+			})
+		}
+	
+		return ctx.SendFile(filePath)
+	})
 }
