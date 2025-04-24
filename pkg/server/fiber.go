@@ -28,7 +28,12 @@ func NewServer(cfg *config.Config, db database.Database, jwt *jwt.JWTService) (S
 	setupCors(app)
 
 	// กำหนด static files
-	app.Static("/uploads", "./uploads")
+	app.Static("/uploads", "/app/uploads")
+	// app.Static("/app/uploads", "./app/uploads")
+	// app.Static("/app/uploads", "./uploads")
+// ตั้งค่า Static Route
+app.Static("/uploads", "/app/uploads")
+
 
 	// กำหนด middleware สำหรับการกู้คืนจาก panic
 	app.Use(recover.New())
@@ -55,7 +60,9 @@ func setupCors(app *fiber.App) {
     }))
 }
 
+
 func (s *fiberServer) StartServer() error {
-	serverUrl := fmt.Sprintf(":%d", s.port)
+	serverUrl := fmt.Sprintf("0.0.0.0:%d", s.port) 
 	return s.app.Listen(serverUrl)
 }
+

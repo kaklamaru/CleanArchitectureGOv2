@@ -6,6 +6,7 @@ import (
 	"go-clean-arch/pkg/jwt"
 	"go-clean-arch/pkg/server"
 	"log"
+	// "os"
 	"time"
 )
 func deleteOldNews(db database.Database) {
@@ -41,6 +42,21 @@ func updatePastEventStatus(db database.Database) {
 		time.Sleep(12 * time.Hour)
 	}
 }
+
+// func checkFile(filePath string) {
+//     // ใช้ os.Stat() เพื่อตรวจสอบว่าไฟล์มีอยู่ใน path ที่กำหนดหรือไม่
+//     fileInfo, err := os.Stat(filePath)
+//     if err != nil {
+//         if os.IsNotExist(err) {
+//             fmt.Println("ไฟล์ไม่พบ:", filePath)
+//         } else {
+//             fmt.Println("เกิดข้อผิดพลาดในการตรวจสอบไฟล์:", err)
+//         }
+//     } else {
+//         fmt.Println("ไฟล์พบที่:", filePath)
+//         fmt.Println("รายละเอียดไฟล์:", fileInfo)
+//     }
+// }
 
 
 

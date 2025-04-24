@@ -96,3 +96,13 @@ func DecodeIDs(dataStr string) ([]uint, error) {
 
 	return ids, nil
 }
+
+func CombineDateAndTime(date time.Time, timeStr string) time.Time {
+    layout := "15:04"
+    parsedTime, _ := time.Parse(layout, timeStr)
+    return time.Date(date.Year(), date.Month(), date.Day(), parsedTime.Hour(), parsedTime.Minute(), 0, 0, date.Location())
+}
+func ConvertToThaiTime(t time.Time) time.Time {
+    loc, _ := time.LoadLocation("Asia/Bangkok")
+    return t.In(loc)
+}

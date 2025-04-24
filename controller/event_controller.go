@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"go-clean-arch/pkg/utility"
+	"os"
 	"strconv"
 
 	// "go-clean-arch/structure/entity"
@@ -583,34 +584,73 @@ func (c *EventController) UploadFileOutside(ctx *fiber.Ctx) error {
 	})
 }
 
+// func (c *EventController) GetFileOutside(ctx *fiber.Ctx) error {
+// 	idStr := ctx.Params("eventid")
+// 	id, err := strconv.Atoi(idStr)
+// 	if err != nil {
+// 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error": "invalid id format",
+// 		})
+// 	}
+// 	eventID := uint(id)
+
+// 	idStr = ctx.Params("userid")
+// 	idInt, err := strconv.Atoi(idStr)
+// 	if err != nil {
+// 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+// 			"error": "invalid id format",
+// 		})
+// 	}
+// 	userID := uint(idInt)
+
+// 	filePath, err := c.eventUsecase.GetFileOutside(eventID, userID)
+// 	if err != nil {
+// 		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+// 			"error": err.Error(),
+// 		})
+// 	}
+
+	
+// 	return ctx.SendFile(filePath, false)
+
+// }
 func (c *EventController) GetFileOutside(ctx *fiber.Ctx) error {
-	idStr := ctx.Params("eventid")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid id format",
-		})
-	}
-	eventID := uint(id)
+    idStr := ctx.Params("eventid")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "invalid id format",
+        })
+    }
+    eventID := uint(id)
 
-	idStr = ctx.Params("userid")
-	idInt, err := strconv.Atoi(idStr)
-	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "invalid id format",
-		})
-	}
-	userID := uint(idInt)
+    idStr = ctx.Params("userid")
+    idInt, err := strconv.Atoi(idStr)
+    if err != nil {
+        return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "invalid id format",
+        })
+    }
+    userID := uint(idInt)
 
-	filePath, err := c.eventUsecase.GetFileOutside(eventID, userID)
-	if err != nil {
-		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": err.Error(),
-		})
-	}
-	return ctx.SendFile(filePath, false)
+    filePath, err := c.eventUsecase.GetFileOutside(eventID, userID)
+    if err != nil {
+        return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "error": err.Error(),
+        })
+    }
 
+    // ตรวจสอบว่าไฟล์มีอยู่ในที่ที่คาดหวัง
+    if _, err := os.Stat(filePath); os.IsNotExist(err) {
+        return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
+            "error": "File not found",
+        })
+    }
+
+    // ส่งไฟล์
+    return ctx.SendFile(filePath, false)
 }
+
 
 func (c *EventController) DashboardData(ctx *fiber.Ctx) error{
 	idStr := ctx.Params("year")

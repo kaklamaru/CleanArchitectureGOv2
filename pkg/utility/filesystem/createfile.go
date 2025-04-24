@@ -128,22 +128,34 @@ func header(pdf *gopdf.GoPdf,data response.OutsideResponse){
 
 
 func table(pdf *gopdf.GoPdf,data response.OutsideResponse) {
-	date := utility.FormatToThaiDate(data.StartDate)
-	time := utility.FormatToThaiTime(data.StartDate)
-	endtime := utility.AddHoursToTime(data.StartDate,data.WorkingHour)
-	tableStartY := 180.0
-	marginLeft := 51.0
-	table := pdf.NewTableLayout(marginLeft, tableStartY, 30, 1)
+    date := utility.FormatToThaiDate(data.StartDate)
 
+    // รวมเวลาเริ่มต้นจาก string "00:00" เข้ากับ StartDate
+	startTime := utility.ConvertToThaiTime(data.StartDate)
+	timeStr := utility.FormatToThaiTime(startTime)
+	endTime := utility.AddHoursToTime(startTime, data.WorkingHour)
+	
 
-	pdf.SetFont("THSarabunNewBold", "", 16)
-	table.AddColumn("โครงการ/กิจกรรมจิตอาสา", 260, "left")
-	table.AddColumn("วันเดือนปี ที่เข้าร่วม", 100, "center")
-	table.AddColumn("สถานที่", 150, "center")
-	table.AddColumn("เวลามา-เวลากลับ", 150, "center")
-	table.AddColumn("จำนวนชั่งโมง", 80, "center")
-	table.AddRow([]string{data.EventName, date ,data.Location, time+"-"+endtime , fmt.Sprint(data.WorkingHour)})
-	table.DrawTable()
+    tableStartY := 180.0
+    marginLeft := 51.0
+    table := pdf.NewTableLayout(marginLeft, tableStartY, 30, 1)
+
+    pdf.SetFont("THSarabunNewBold", "", 16)
+    table.AddColumn("โครงการ/กิจกรรมจิตอาสา", 260, "left")
+    table.AddColumn("วันเดือนปี ที่เข้าร่วม", 100, "center")
+    table.AddColumn("สถานที่", 150, "center")
+    table.AddColumn("เวลามา-เวลากลับ", 150, "center")
+    table.AddColumn("จำนวนชั่วโมง", 80, "center")
+
+    table.AddRow([]string{
+        data.EventName,
+        date,
+        data.Location,
+        timeStr + "-" + endTime,
+        fmt.Sprint(data.WorkingHour),
+    })
+
+    table.DrawTable()
 
     pdf.SetFont("THSarabunNewBold", "", 18)
 
