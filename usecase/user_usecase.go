@@ -242,17 +242,35 @@ func (u *userUsecase) UpdateStudentByID(req *request.RegisterStudent, claims map
 		return fmt.Errorf("invalid user_id in claims")
 	}
 	userID := uint(userIDFloat)
-
-	student := entity.Student{
-		UserID:    userID,
-		TitleName: req.TitleName,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Phone:     req.Phone,
-		Code:      req.Code,
-		Year:      req.Year,
-		BranchId:  req.BranchId,
+	role, ok := claims["role"].(string)
+	if !ok {
+		return fmt.Errorf("invalid role in claims")
 	}
+	var student entity.Student
+	if role == "admin" {
+		student = entity.Student{
+			UserID:    req.UserID, // Admin can update any user
+			TitleName: req.TitleName,
+			FirstName: req.FirstName,
+			LastName:  req.LastName,
+			Phone:     req.Phone,
+			Code:      req.Code,
+			Year:      req.Year,
+			BranchId:  req.BranchId,
+		}
+	} else {
+		student = entity.Student{
+			UserID:    userID, // Regular users can only update themselves
+			TitleName: req.TitleName,
+			FirstName: req.FirstName,
+			LastName:  req.LastName,
+			Phone:     req.Phone,
+			Code:      req.Code,
+			Year:      req.Year,
+			BranchId:  req.BranchId,
+		}
+	}
+
 	return u.userRepo.UpdateStudentByID(&student)
 }
 

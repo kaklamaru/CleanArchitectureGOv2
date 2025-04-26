@@ -42,7 +42,7 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 			Name:     "token",
 			Value:    "",
 			Path:     "/",
-			Domain: ".activitiesmanagement.online,http://localhost:3000",
+			Domain: ".activitiesmanagement.online",
 			Expires:  time.Now().Add(-1 * time.Hour),
 			MaxAge:   -1,
 			Secure:   true,
@@ -90,6 +90,7 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	teacher.Get("/allstudent", userContro.GetAllStudent)
 	teacher.Put("/personalinfo", userContro.UpdateTeacher)
 	student.Put("/personalinfo", userContro.UpdateStudent)
+	admin.Put("/studentinfo", userContro.UpdateStudent)
 	admin.Put("/role", userContro.UpdateRoleByID)
 
 	// events

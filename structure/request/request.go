@@ -11,7 +11,7 @@ type RegisterTeacher struct {
 	Code      string `json:"code"`
 }
 type RegisterStudent struct {
-	// UserID    uint   `json:"user_id"`
+	UserID    uint   `json:"user_id"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
 	TitleName string `json:"title_name"`

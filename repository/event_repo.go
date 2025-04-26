@@ -236,7 +236,7 @@ func (r *eventRepository) DeleteEventWithTransaction(eventID, userID uint) error
 	var filePaths []string
 	if err := tx.Model(&entity.EventInside{}).
 		Where("event_id = ?", eventID).
-		Pluck("file_path", &filePaths).Error; err != nil {
+		Pluck("file", &filePaths).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to get file paths: %w", err)
 	}
