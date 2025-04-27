@@ -127,10 +127,11 @@ type Done struct {
 	Student   Student `gorm:"foreignKey:User;references:UserID" json:"student"`
 	Certifier uint    `gorm:"default:null" json:"certifier"`
 	Teacher   Teacher `gorm:"foreignKey:Certifier;references:UserID" json:"teacher"`
-	Year      uint    `gorm:"not null" json:"year"`
+	Year      uint    `gorm:"primaryKey not null" json:"year"`
 	Status    bool    `json:"status"`
 	Comment   string  `json:"comment"`
 }
+
 
 type EventOutside struct {
 	EventID     uint      `gorm:"primaryKey;autoIncrement" json:"event_id"`

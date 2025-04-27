@@ -82,7 +82,7 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
     ctx.Cookie(&fiber.Cookie{
         Name:     "token",
         Value:    token,
-        Expires:  time.Now().Add(24 * time.Hour),
+        Expires:  time.Now().Add(5 * time.Hour),
         HTTPOnly: true,
         Secure:   !isDev, // Localhost ต้องเป็น false
         SameSite: func() string {

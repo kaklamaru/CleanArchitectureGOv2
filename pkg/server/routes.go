@@ -42,7 +42,7 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 			Name:     "token",
 			Value:    "",
 			Path:     "/",
-			Domain: ".activitiesmanagement.online",
+			Domain:   ".activitiesmanagement.online",
 			Expires:  time.Now().Add(-1 * time.Hour),
 			MaxAge:   -1,
 			Secure:   true,
@@ -105,8 +105,6 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	teacher.Put("/event/:id", eventContro.UpdateEventByID)
 	student.Get("myevents/:year", eventContro.MyEventThisYear)
 	student.Get("myevents", eventContro.MyEventInside)
-	
-
 
 	// inside
 	student.Post("/joinevent/:id", eventContro.JoinEvent)
@@ -135,10 +133,10 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 
 	admin.Get("/done", userContro.GetDoneFiltered)
 
-	admin.Get("/dashboard/:year",eventContro.DashboardData)
-	admin.Get("/event-7day",eventContro.GetUpcomingEventsWithin7Days)
+	admin.Get("/dashboard/:year", eventContro.DashboardData)
+	admin.Get("/event-7day", eventContro.GetUpcomingEventsWithin7Days)
 
-	app.Get("/devfile",func(ctx *fiber.Ctx) error {
+	app.Get("/devfile", func(ctx *fiber.Ctx) error {
 		// ดึง path มาจาก query param
 		filePath := ctx.Query("path")
 		if filePath == "" {
@@ -146,20 +144,20 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 				"error": "missing 'path' parameter",
 			})
 		}
-	
+
 		// แปลง path dev จาก "/app/uploads/..." เป็น "./uploads/..."
 		// (ถ้าระบบจริงเก็บใน local folder แบบ relative)
 		if strings.HasPrefix(filePath, "/app") {
 			filePath = "." + strings.TrimPrefix(filePath, "/app")
 		}
-	
+
 		// ตรวจสอบว่าไฟล์มีอยู่จริงไหม
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
 			return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{
 				"error": "file not found",
 			})
 		}
-	
+
 		return ctx.SendFile(filePath)
 	})
 }
