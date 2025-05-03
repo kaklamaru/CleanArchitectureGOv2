@@ -133,8 +133,8 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 
 	admin.Get("/done", userContro.GetDoneFiltered)
 
-	admin.Get("/dashboard/:year", eventContro.DashboardData)
-	admin.Get("/event-7day", eventContro.GetUpcomingEventsWithin7Days)
+	teacher.Get("/dashboard/:year", eventContro.DashboardData)
+	teacher.Get("/event-7day", eventContro.GetUpcomingEventsWithin7Days)
 
 	app.Get("/devfile", func(ctx *fiber.Ctx) error {
 		// ดึง path มาจาก query param
