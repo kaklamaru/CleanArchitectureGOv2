@@ -1,0 +1,39 @@
+func (r *eventRepository) JoinEvent(eventInside *entity.EventInside) error {
+	tx := r.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}}()
+	if err := tx.Exec("SET lock_timeout TO '5s'").Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to set lock timeout: %w", err)
+	}
+	var event entity.Event
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("event_id = ?", eventInside.EventId).
+		First(&event).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to fetch event: %w", err)
+	}
+	if event.FreeSpace <= 0 {
+		tx.Rollback()
+		return fmt.Errorf("no free space available for event")
+	}
+	event.FreeSpace -= 1
+	if event.FreeSpace == 0 {
+		event.Status = false
+	}
+	if err := tx.Save(&event).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to update event free space: %w", err)
+	}
+	if err := tx.Create(eventInside).Error; err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to create event inside record: %w", err)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
+}

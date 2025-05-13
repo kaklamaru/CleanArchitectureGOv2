@@ -98,16 +98,6 @@ func (c *UserController) Login(ctx *fiber.Ctx) error {
             return ".activitiesmanagement.online"
         }(),
     })
-	
-	// ctx.Cookie(&fiber.Cookie{
-	// 	Name:     "token",                        // ชื่อคุกกี้
-	// 	Value:    token,                          // ค่า JWT
-	// 	Expires:  time.Now().Add(24 * time.Hour), // วันหมดอายุ (24 ชั่วโมง)
-	// 	HTTPOnly: true,                           // ป้องกันการเข้าถึงผ่าน JavaScript
-	// 	Secure:   true,                           // ใช้งานเฉพาะ HTTPS (แนะนำสำหรับ Production)
-	// 	SameSite: "None",                         // นโยบาย SameSite
-	// 	Domain: ".activitiesmanagement.online",
-	// })
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",

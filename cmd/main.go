@@ -6,28 +6,25 @@ import (
 	"go-clean-arch/pkg/jwt"
 	"go-clean-arch/pkg/server"
 	"log"
-	// "os"
 	"time"
 )
 func deleteOldNews(db database.Database) {
 	for {
-		// ตั้งค่าเขตเวลาให้ตรงกับข้อมูลที่จัดเก็บ
-		db.GetDB().Exec("SET time_zone = '+07:00'")
-		
-		result := db.GetDB().Exec("DELETE FROM `news` WHERE created_at < NOW() - INTERVAL 7 DAY")
+		db.GetDB().Exec("SET TIME ZONE 'Asia/Bangkok'")
+
+		result := db.GetDB().Exec("DELETE FROM news WHERE created_at < NOW() - INTERVAL '7 days'")
 		if result.Error != nil {
 			log.Printf("Error deleting old news: %v", result.Error)
 		} else {
 			log.Printf("Deleted %d old news data successfully.", result.RowsAffected)
 		}
 
-		time.Sleep(24 * time.Hour)
+		time.Sleep(12 * time.Hour)
 	}
 }
 func updatePastEventStatus(db database.Database) {
 	for {
-		// ตั้งค่า timezone ให้ตรงกับเขตเวลาในประเทศไทย
-		db.GetDB().Exec("SET time_zone = '+07:00'")
+		db.GetDB().Exec("SET TIME ZONE 'Asia/Bangkok'")
 
 		// อัปเดต status ของ event ที่ start_date < ปัจจุบัน
 		result := db.GetDB().Exec("UPDATE events SET status = false WHERE start_date < NOW() AND status = true")
@@ -38,27 +35,10 @@ func updatePastEventStatus(db database.Database) {
 			log.Printf("Updated %d event(s) to status=false (past start date).", result.RowsAffected)
 		}
 
-		// รอ 24 ชั่วโมงก่อนทำงานอีกครั้ง
+		// รอ 12 ชั่วโมงก่อนทำงานอีกครั้ง
 		time.Sleep(12 * time.Hour)
 	}
 }
-
-// func checkFile(filePath string) {
-//     // ใช้ os.Stat() เพื่อตรวจสอบว่าไฟล์มีอยู่ใน path ที่กำหนดหรือไม่
-//     fileInfo, err := os.Stat(filePath)
-//     if err != nil {
-//         if os.IsNotExist(err) {
-//             fmt.Println("ไฟล์ไม่พบ:", filePath)
-//         } else {
-//             fmt.Println("เกิดข้อผิดพลาดในการตรวจสอบไฟล์:", err)
-//         }
-//     } else {
-//         fmt.Println("ไฟล์พบที่:", filePath)
-//         fmt.Println("รายละเอียดไฟล์:", fileInfo)
-//     }
-// }
-
-
 
 func main() {
 	

@@ -47,14 +47,14 @@ func NewUserUsecase(userRepo repository.UserRepository, jwt jwt.JWTService) User
 func (u *userUsecase) CreateTeacher(req *request.RegisterTeacher) error {
 	hashedPassword, err := hash.HashPassword(req.Password)
 	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err) // ใช้ fmt.Errorf เพื่อเพิ่ม context ให้กับ error
+		return fmt.Errorf("failed to hash password: %w", err)
 	}
 	req.Password = hashedPassword
 
 	user := &entity.User{
 		Email:    req.Email,
 		Password: req.Password,
-		Role:     "teacher",
+		Role:     req.Role,
 	}
 	teacher := &entity.Teacher{
 		TitleName: req.TitleName,

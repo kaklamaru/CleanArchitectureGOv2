@@ -175,6 +175,10 @@ func (u *eventUsecase) CreateEvent(req *request.EventRequest, claims map[string]
 		return err
 	}
 
+	if req.WorkingHour > 7 {
+		return fmt.Errorf("working hours must not exceed 7 hours")
+	}
+
 	event := &entity.Event{
 		EventName:      req.EventName,
 		StartDate:      startDate,
@@ -543,18 +547,15 @@ func (u *eventUsecase) JoinEvent(eventID uint, claims map[string]interface{}) er
 	if event.FreeSpace == 0 {
 		return fmt.Errorf("the event is full")
 	}
-
 	if !checkPermission(event, student) {
 		return fmt.Errorf("user is not allowed to join this event")
 	}
-
 	eventInside := &entity.EventInside{
 		EventId:   eventID,
 		User:      userID,
 		Status:    false,
 		Certifier: event.Creator.UserID,
 	}
-
 	err = u.eventRepo.JoinEvent(eventInside)
 	if err != nil {
 		return fmt.Errorf("failed to join event inside: %w", err)
@@ -687,21 +688,19 @@ func (u *eventUsecase) UpdateEventStatusAndComment(eventID uint, userID uint, st
 	return u.eventRepo.UpdateEventStatusAndComment(eventID, userID, status, comment)
 }
 
-
-func (u *eventUsecase) DashboardData(year uint) (*response.DashboardSummary, error){
+func (u *eventUsecase) DashboardData(year uint) (*response.DashboardSummary, error) {
 	return u.eventRepo.DashboardData(year)
 }
 
-func (u *eventUsecase) GetMonthlyEventStats(year uint) (eventCounts, outsideCounts []response.MonthlyEventCount, err error){
+func (u *eventUsecase) GetMonthlyEventStats(year uint) (eventCounts, outsideCounts []response.MonthlyEventCount, err error) {
 	return u.eventRepo.GetMonthlyEventStats(year)
 }
 
-
-func (u *eventUsecase) GetUpcomingEventsWithin7Days() ([]response.EventResponse, error){
-	events ,err := u.eventRepo.GetUpcomingEventsWithin7Days()
+func (u *eventUsecase) GetUpcomingEventsWithin7Days() ([]response.EventResponse, error) {
+	events, err := u.eventRepo.GetUpcomingEventsWithin7Days()
 	if err != nil {
 		return nil, err
-	} 
+	}
 
 	var res []response.EventResponse
 	for _, event := range events {

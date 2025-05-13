@@ -9,6 +9,7 @@ type RegisterTeacher struct {
 	LastName  string `json:"last_name"`
 	Phone     string `json:"phone"`
 	Code      string `json:"code"`
+	Role      string `json:"role"`
 }
 type RegisterStudent struct {
 	UserID    uint   `json:"user_id"`

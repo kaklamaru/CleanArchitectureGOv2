@@ -330,13 +330,11 @@ func (r *eventRepository) JoinEvent(eventInside *entity.EventInside) error {
 		}
 	}()
 
-	// ตั้งค่า lock timeout เพื่อป้องกันการล็อกที่ยาวนาน
 	if err := tx.Exec("SET lock_timeout TO '5s'").Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to set lock timeout: %w", err)
 	}
 
-	// ทำการล็อกแถว Event ที่ต้องการให้เป็น exclusive lock (UPDATE)
 	var event entity.Event
 	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 		Where("event_id = ?", eventInside.EventId).
@@ -345,13 +343,11 @@ func (r *eventRepository) JoinEvent(eventInside *entity.EventInside) error {
 		return fmt.Errorf("failed to fetch event: %w", err)
 	}
 
-	// ตรวจสอบว่ามีที่ว่างสำหรับผู้เข้าร่วมกิจกรรม
 	if event.FreeSpace <= 0 {
 		tx.Rollback()
 		return fmt.Errorf("no free space available for event")
 	}
 
-	// ลดจำนวนที่ว่างลง 1
 	event.FreeSpace -= 1
 	if event.FreeSpace == 0 {
 		event.Status = false
@@ -361,13 +357,11 @@ func (r *eventRepository) JoinEvent(eventInside *entity.EventInside) error {
 		return fmt.Errorf("failed to update event free space: %w", err)
 	}
 
-	// สร้าง event_inside record
 	if err := tx.Create(eventInside).Error; err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to create event inside record: %w", err)
 	}
 
-	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}

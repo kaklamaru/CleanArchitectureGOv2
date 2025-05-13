@@ -27,6 +27,10 @@ func (u *eventUsecase) CreateEventOutside(req request.OutsideRequest,claims map[
 	}
 	userID := uint(userIDFloat)
 
+	if req.WorkingHour > 7  {
+		return fmt.Errorf("working hours must not exceed 7 hours")
+	}
+
 	outside := entity.EventOutside{
 		User: userID,
 		EventName: req.EventName,

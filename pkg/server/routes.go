@@ -59,7 +59,7 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 			"message": "Welcome, Admin or Superadmin!",
 		})
 	})
-	teacher := protected.Group("/teacher", middleware.RoleMiddleware("superadmin", "admin", "teacher"))
+	teacher := protected.Group("/teacher", middleware.RoleMiddleware("superadmin", "admin", "teacher","officer"))
 	teacher.Get("/teacher", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"message": "Welcome, Teacher",
@@ -75,7 +75,7 @@ func SetupRoutes(app *fiber.App, jwt *jwt.JWTService, db database.Database) {
 	// faculty&branch
 	admin.Post("/faculty", facBranContro.CreateFaculty)
 	app.Get("/faculties", facBranContro.GetAllFaculties)
-	admin.Put("/faculty/:id", facBranContro.UpdateFacultyByID) // รวมการเพิ่ม staff ไปด้วย
+	admin.Put("/faculty/:id", facBranContro.UpdateFacultyByID)
 	admin.Delete("/faculty/:id", facBranContro.DeleteFacultyByID)
 	// admin.Put("/faculty-staff/:id/:userid", facBranContro.UpdateSuperUser)
 
