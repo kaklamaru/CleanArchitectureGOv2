@@ -50,12 +50,16 @@ func (u *userUsecase) CreateTeacher(req *request.RegisterTeacher) error {
 		return fmt.Errorf("failed to hash password: %w", err)
 	}
 	req.Password = hashedPassword
+	if req.Role == "" {
+		return fmt.Errorf("failed to input role")
+	}
 
 	user := &entity.User{
 		Email:    req.Email,
 		Password: req.Password,
 		Role:     req.Role,
 	}
+	
 	teacher := &entity.Teacher{
 		TitleName: req.TitleName,
 		FirstName: req.FirstName,
